@@ -1,0 +1,11 @@
+*~
+*.beam
+OUTPUT
+doc/*
+ebin/*
+rebar.config
+erl_crash.dump
+coverage/*
+logs/*
+test/cover.spec
+**temp
