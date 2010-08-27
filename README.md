@@ -3,11 +3,15 @@ YATErl - an Erlang binding for YATE VOIP Application Server
 
 ## DESCRIPTION
 
-YATErl is a simple Erlang binding for YATE-based VOIP applications,
-YATE is a VOIP Application Server developed by Null Team (http://yate.null.ro).
-
+YATErl is a simple Erlang binding developer by Alca Società Cooperativa
+([http://alcacoop.it]), to create YATE-based VOIP applications using the
+powerful feature of the Erlang language and OTP framework.
 YATErl is designed as a standard OTP application so you can create an OTP release
 for your application which include and use it to implement a VOIP application.
+
+YATE is a VOIP Application Server developed by Null Team ([http://yate.null.ro]),
+coded in C++ using message-passing techniques, and actually scriptable in PHP
+and Python.
 
 ## DOWNLOAD AND INSTALL
 
