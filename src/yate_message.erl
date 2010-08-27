@@ -161,10 +161,10 @@ set_processed(Message) ->
     yate_event:change_event_attribute(processed, "true", Message).
 
 %% @doc: Set a yate message processed flag to "true"/true or "false"/false
-%% @spec: (Value, YateMessage::yate_event()) -> NewYateMessage::yate_event()
+%% @spec: (Value::Bool, YateMessage::yate_event()) -> NewYateMessage::yate_event()
 %%
-%% where:
-%%       Value = "true" | true | "false" | false
+%% where
+%%       Bool =  true | false 
 set_processed("true", Message) ->
     yate_event:change_event_attribute(processed, "true", Message);
 set_processed("false", Message) ->
