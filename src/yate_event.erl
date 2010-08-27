@@ -46,6 +46,9 @@
          attrs/2
         ]).
 
+%% NOTE: private function used in yate_message helpers
+-export([change_event_attribute/3]).
+
 %%====================================================================
 %% API
 %%====================================================================
