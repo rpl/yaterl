@@ -1,0 +1,12 @@
+{application, yate,
+ [
+  {description, "YATE Erlang binding"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                 ]},
+  {mod, { yate_app, []}},
+  {env, []}
+ ]}.
