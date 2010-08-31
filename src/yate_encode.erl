@@ -23,8 +23,6 @@
 %% @doc 'yate_encode' is a simple yate module to encode yate_event erlang records to binary strings.
 -module(yate_encode).
 
--compile(export_all).
-
 -export([to_binary/1]).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  

@@ -2,7 +2,9 @@
 
 -compile(export_all).
 
+-include_lib("ct.hrl").
 -include("../include/yate.hrl").
+-include("local_test_helpers.hrl").
 
 all() ->
     [
