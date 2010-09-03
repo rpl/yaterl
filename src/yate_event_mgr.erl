@@ -106,7 +106,7 @@ handle_cast({send_yate_event, YateEvent}, State) ->
     send_to_yate_connection_mgr(YateEvent),
     {noreply, State};
 handle_cast({handle_yate_event, YateEvent}, State) ->
-    spawn_incoming_event_processing_srv(YateEvent),
+    spawn_incoming_event_srv(YateEvent),
     {noreply, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling all non call/cast messages
@@ -148,7 +148,7 @@ request_yate_message_registering() ->
     YateRegisteringMgr_ModuleName = yaterl_config:yate_registering_mgr(),
     YateRegisteringMgr_ModuleName:start_message_registering().
 
-spawn_incoming_event_processing_srv(YateEvent) ->
-    IncomingProcessingSrv_ModuleName = yaterl_config:yate_incoming_event_processing_srv(),
+spawn_incoming_event_srv(YateEvent) ->
+    IncomingProcessingSrv_ModuleName = yaterl_config:yate_incoming_event_srv(),
     IncomingProcessingSrv_ModuleName:start(YateEvent).
 

@@ -10,8 +10,8 @@
          yate_registering_mgr/0,
          yate_registering_mgr/1,
 
-         yate_incoming_event_processing_srv/0,
-         yate_incoming_event_processing_srv/1,
+         yate_incoming_event_srv/0,
+         yate_incoming_event_srv/1,
 
          yate_message_registering_configlist/0,
          yate_message_registering_configlist/1,
@@ -38,11 +38,11 @@ yate_registering_mgr() ->
 yate_registering_mgr(Value) ->
     set_key(yate_registering_mgr, Value).
 
-yate_incoming_event_processing_srv() ->
-    get_key(yate_incoming_event_processing_srv, yate_incoming_event_processing_srv).
+yate_incoming_event_srv() ->
+    get_key(yate_incoming_event_srv, yate_incoming_event_processing_srv).
 
-yate_incoming_event_processing_srv(Value) ->
-    set_key(yate_incoming_event_processing_srv, Value).
+yate_incoming_event_srv(Value) ->
+    set_key(yate_incoming_event_srv, Value).
 
 yate_message_registering_configlist() ->
     get_key(yate_message_registering_configlist, []).

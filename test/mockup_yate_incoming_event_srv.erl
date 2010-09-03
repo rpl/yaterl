@@ -1,4 +1,4 @@
--module(mockup_yate_incoming_event_processing_srv).
+-module(mockup_yate_incoming_event_srv).
 
 -behaviour(gen_server).
 

@@ -26,8 +26,8 @@ init_per_suite(Config) ->
     yaterl_config:yate_event_mgr(yate_event_mgr),
     yaterl_config:yate_connection_mgr(mockup_yate_connection_mgr),
     yaterl_config:yate_registering_mgr(mockup_yate_registering_mgr),
-    yaterl_config:yate_incoming_event_processing_srv(
-      mockup_yate_incoming_event_processing_srv
+    yaterl_config:yate_incoming_event_srv(
+      mockup_yate_incoming_event_srv
      ),
     Config.
 
@@ -72,10 +72,10 @@ receive_yate_event(_Config) ->
     % 1) start event manager 
     yate_event_mgr:start_link(),
     % 2) start mockup yate connection mgr
-    mockup_yate_incoming_event_processing_srv:mockup_start_link(),
+    mockup_yate_incoming_event_srv:mockup_start_link(),
     mockup_yate_connection_mgr:start_link(),
     % 3) receive a yate event
     YateEvent = "FakeYateEvent",
     mockup_yate_connection_mgr:fake_received_yate_event(YateEvent),
-    true = mockup_yate_incoming_event_processing_srv:is_spawned(YateEvent),
+    true = mockup_yate_incoming_event_srv:is_spawned(YateEvent),
     ok.
