@@ -8,13 +8,14 @@
 
 %% Mockup Test helper API
 -export([
-         mockup_start_link/0
+         mockup_start_link/0,
+         is_spawned_and_run_called/1
         ]).
 
 %% API
 -export([
          start/1,
-         is_spawned/1
+         run/1
         ]).
 
 %% gen_server callbacks
@@ -22,7 +23,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {yate_event,
+-record(state, {expected_yate_event, yate_event, run_called,
                 waitfor_spawned_from}).
 
 %%====================================================================
@@ -32,16 +33,24 @@
 mockup_start_link() ->
     gen_server:start({local, ?SERVER}, ?MODULE, [], []).
 
+is_spawned_and_run_called(YateEvent) ->
+    gen_server:call(?SERVER, {wait_spawned_and_run, YateEvent}),
+    gen_server:call(?SERVER, is_run_called).
+
+
 %%====================================================================
 %% API
 %%====================================================================
 
 start(YateEvent) ->
     ?CT_LOG(YateEvent),
-    gen_server:cast(?SERVER, {start, YateEvent}).
+    gen_server:cast(?SERVER, {start, YateEvent}),
+    fake_pid.
 
-is_spawned(YateEvent) ->
-    gen_server:call(?SERVER, {wait_spawned, YateEvent}).
+run(Pid) ->
+    ?CT_LOG("Called RUN on Spawned Server"),
+    gen_server:cast(?SERVER, {run, Pid}),
+    ok.
 
 %%====================================================================
 %% gen_server callbacks
@@ -51,13 +60,19 @@ init([]) ->
     {ok, #state{}}.
 
 handle_cast({start, YateEvent}, State) ->
-    Reply = (YateEvent =:= State#state.yate_event),
+    NewState = State#state{yate_event=YateEvent},
+    {noreply, NewState};
+handle_cast({run, _Pid}, State) ->
+    NewState = State#state{run_called=true},
+    Reply = (State#state.yate_event =:= State#state.yate_event),
     gen_server:reply(State#state.waitfor_spawned_from, Reply),
-    {noreply, State}.
-
-handle_call({wait_spawned, YateEvent}, From, State) ->
-    NewState = State#state{waitfor_spawned_from=From,
-                          yate_event=YateEvent},
     {noreply, NewState}.
+handle_call({wait_spawned_and_run, YateEvent}, From, State) ->
+    NewState = State#state{waitfor_spawned_from=From,
+                          expected_yate_event=YateEvent},
+    {noreply, NewState};
+handle_call(is_run_called, _From, State) ->
+    Reply = State#state.run_called,
+    {reply, Reply, State}.
 
 

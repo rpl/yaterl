@@ -149,6 +149,7 @@ request_yate_message_registering() ->
     YateRegisteringMgr_ModuleName:start_message_registering().
 
 spawn_incoming_event_srv(YateEvent) ->
-    IncomingProcessingSrv_ModuleName = yaterl_config:yate_incoming_event_srv(),
-    IncomingProcessingSrv_ModuleName:start(YateEvent).
+    IncomingProcessingSrv = yaterl_config:yate_incoming_event_srv(),
+    Pid = IncomingProcessingSrv:start(YateEvent),
+    IncomingProcessingSrv:run(Pid).
 

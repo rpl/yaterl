@@ -77,5 +77,5 @@ receive_yate_event(_Config) ->
     % 3) receive a yate event
     YateEvent = "FakeYateEvent",
     mockup_yate_connection_mgr:fake_received_yate_event(YateEvent),
-    true = mockup_yate_incoming_event_srv:is_spawned(YateEvent),
+    true = mockup_yate_incoming_event_srv:is_spawned_and_run_called(YateEvent),
     ok.
