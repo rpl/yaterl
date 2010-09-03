@@ -221,18 +221,10 @@ send_to_yate_connection({remote, YateConnection_NodeName,
              send_binary_data, [yate_encode:to_binary(YateEvent)]).
 
 send_to_yate_event_manager(YateEvent) ->
-    YateEventManager_ModuleName = case application:get_env(yaterl, 
-                                                           yate_event_manager_module) of
-                                      undefined -> yate_event_mgr;
-                                      {ok, CustomName} -> CustomName
-                                  end,
+    YateEventManager_ModuleName = yaterl_config:yate_event_mgr(),
     YateEventManager_ModuleName:handle_yate_event(YateEvent).
     
 init_yate_event_manager() ->
-    YateEventManager_ModuleName = case application:get_env(yaterl, 
-                                                           yate_event_manager_module) of
-                                      undefined -> yate_event_mgr;
-                                      {ok, CustomName} -> CustomName
-                                  end,
+    YateEventManager_ModuleName = yaterl_config:yate_event_mgr(),
     YateEventManager_ModuleName:new_connection_available().
 

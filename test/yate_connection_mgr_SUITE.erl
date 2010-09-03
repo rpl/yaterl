@@ -23,8 +23,7 @@ suite() -> [{timetrap,{seconds,10}}].
 %% variable, but should NOT alter/remove any existing entries.
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
-    application:set_env(yaterl, yate_event_manager_module, 
-                        mockup_yate_event_mgr),
+    yaterl_config:yate_event_mgr(mockup_yate_event_mgr),
     Config.
 
 %%--------------------------------------------------------------------
@@ -53,15 +52,17 @@ new_connection_started_initialization_sequence(_Config) ->
     % assert unconnected manager
     false = yate_connection_mgr:is_connected(),
     {ok, undefined} = yate_connection_mgr:get_yate_connection(),
-
     % 2) start a fake yate connection server:
     %   yate_connection:start_link -> gen_server:start_link
     %   gen_server:start_link -> yate_connection:init
     %   yate_connection:init -> yate_connection_mgr:set_yate_connection
     mockup_yate_connection:start_link(),
-    % assert successful yate connection registering
+    %      assert successful yate connection registering
     true = yate_connection_mgr:is_connected(),
     {ok, {local, mockup_yate_connection}} = yate_connection_mgr:get_yate_connection(),
+    %      test connection manager call new_connection_available on the mockup 
+    %      yate event manager
+    true = mockup_yate_event_mgr:is_new_connection_available_called(),
     ok.
 
 encode_and_send_binary_data(_Config) ->
@@ -86,9 +87,6 @@ receive_and_decode_binary_data(_Config) ->
     mockup_yate_event_mgr:start_link(),
     % 3) start a fake yate connection server
     mockup_yate_connection:start_link(),
-    %      test connection manager call new_connection_available on the mockup 
-    %      yate event manager
-    true = mockup_yate_event_mgr:is_new_connection_available_called(),
     % 4) receive fake yate event from the fake connection server
     mockup_yate_connection:received_binary_data(<<"%%<watch:test.event:true">>),
     %      test decoded yate event received from the fake yate event manager
