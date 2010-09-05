@@ -23,7 +23,8 @@ suite() -> [{timetrap,{seconds,10}}].
 %% variable, but should NOT alter/remove any existing entries.
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
-    yaterl_config:yate_event_mgr(mockup_yate_event_mgr),
+    yaterl_config:yate_incoming_event_srv(mockup_yate_incoming_event_srv),
+    yaterl_config:yate_subscribe_mgr(mockup_yate_subscribe_mgr),
     Config.
 
 %%--------------------------------------------------------------------
@@ -37,8 +38,8 @@ end_per_suite(_Config) ->
 
 all() -> [
           new_connection_started_initialization_sequence,
-          encode_and_send_binary_data,
-          receive_and_decode_binary_data
+          send_binary_data,
+          receive_binary_data
          ].
     
 
@@ -48,7 +49,7 @@ new_connection_started_initialization_sequence(_Config) ->
     %     yate_connection_mgr:start_link -> gen_server:start_link
     %     gen_server:start_link -> yate_connection_mgr:init
     yate_connection_mgr:start_link(),
-    mockup_yate_event_mgr:start_link(),
+    mockup_yate_subscribe_mgr:start_link(),
     % assert unconnected manager
     false = yate_connection_mgr:is_connected(),
     {ok, undefined} = yate_connection_mgr:get_yate_connection(),
@@ -62,36 +63,35 @@ new_connection_started_initialization_sequence(_Config) ->
     {ok, {local, mockup_yate_connection}} = yate_connection_mgr:get_yate_connection(),
     %      test connection manager call new_connection_available on the mockup 
     %      yate event manager
-    true = mockup_yate_event_mgr:is_new_connection_available_called(),
+    true = mockup_yate_subscribe_mgr:is_start_subscribe_sequence_called(),
     ok.
 
-encode_and_send_binary_data(_Config) ->
+send_binary_data(_Config) ->
     % 1) start connection manager
     %    set yate_event_manager_module to the fake event manager server
     yate_connection_mgr:start_link(),
-    mockup_yate_event_mgr:start_link(),
+    mockup_yate_subscribe_mgr:start_link(),
     % 2) start a fake yate connection server
     mockup_yate_connection:start_link(),
     % 3) send yate event from the connection manager
     YateEvent = yate_event:new(watch, [{name, "test.event"}]),
-    yate_connection_mgr:send_yate_event(YateEvent),
+    yate_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)),
     %    and test received data from fake yate connection server
     <<"%%>watch:test.event">> = mockup_yate_connection:pop_outgoing_data(),
     ok.
     
-receive_and_decode_binary_data(_Config) ->
+receive_binary_data(_Config) ->
     % 1) start connection manager
     %      set yate_event_manager_module to the fake event manager server
     yate_connection_mgr:start_link(),
+    mockup_yate_subscribe_mgr:start_link(),
     % 2) start a fake event manager server
-    mockup_yate_event_mgr:start_link(),
+   mockup_yate_incoming_event_srv:mockup_start_link(),
     % 3) start a fake yate connection server
     mockup_yate_connection:start_link(),
     % 4) receive fake yate event from the fake connection server
     mockup_yate_connection:received_binary_data(<<"%%<watch:test.event:true">>),
     %      test decoded yate event received from the fake yate event manager
-    DecodedYateEvent = mockup_yate_event_mgr:pop_incoming_data(),
-    true = yate_event:is_watch(DecodedYateEvent),
-    "test.event" = yate_event:attr(name, DecodedYateEvent),
-    "true" = yate_event:attr(success, DecodedYateEvent),
+    true = mockup_yate_incoming_event_srv:
+        is_spawned_and_run_called(<<"%%<watch:test.event:true">>),
     ok.

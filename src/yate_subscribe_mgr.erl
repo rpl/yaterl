@@ -5,25 +5,27 @@
 %%%
 %%% Created :  2 Sep 2010 by rpl <>
 %%%-------------------------------------------------------------------
--module(yate_registering_mgr).
+-module(yate_subscribe_mgr).
 
 -behaviour(gen_fsm).
 
 %% API
 -export([
          start_link/0,
-         start_message_registering/0,
-         handle_yate_event/1
+         start_subscribe_sequence/0,
+         handle_yate_event/1,
+         resolve_custom_module/1
         ]).
 
 %% gen_fsm callbacks
 -export([init/1, 
-         'STARTED'/2, 'REGISTERING'/2,
+         'STARTED'/2, 'SUBSCRIBE'/2,
+         handle_sync_event/4,
          terminate/3, code_change/4]).
 
 -define(SERVER, ?MODULE).
 
--record(state, {registering_queue, registering_config}).
+-record(state, {subscribe_queue, subscribe_config}).
 
 %%====================================================================
 %% API
@@ -37,12 +39,14 @@
 start_link() ->
     gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-start_message_registering() ->
-    gen_fsm:send_event(?SERVER, start_message_registering).
+start_subscribe_sequence() ->
+    gen_fsm:send_event(?SERVER, start_subscribe_sequence).
 
 handle_yate_event(YateEvent) ->
     gen_fsm:send_event(?SERVER, {handle_yate_event, YateEvent}).
 
+resolve_custom_module(YateEvent) ->
+    gen_fsm:sync_send_all_state_event(?SERVER, {resolve_custom_module, YateEvent}).
 
 %%====================================================================
 %% gen_fsm callbacks
@@ -57,7 +61,7 @@ handle_yate_event(YateEvent) ->
 %% initialize. 
 %%--------------------------------------------------------------------
 init([]) ->
-    {ok, 'STARTED', #state{registering_config=yaterl_config:yate_message_registering_configlist()}}.
+    {ok, 'STARTED', #state{subscribe_config=yaterl_config:yate_message_subscribe_configlist()}}.
 
 %%--------------------------------------------------------------------
 %% Function: 
@@ -71,16 +75,16 @@ init([]) ->
 %% the current state name StateName is called to handle the event. It is also 
 %% called if a timeout occurs. 
 %%--------------------------------------------------------------------
-'STARTED'(start_message_registering, State) ->
-    {NextState, NewStateData} = case start_registering_sequence(State) of
-                                    {continue, StateData} -> {'REGISTERING', StateData};
+'STARTED'(start_subscribe_sequence, State) ->
+    {NextState, NewStateData} = case start_request_queue(State) of
+                                    {continue, StateData} -> {'SUBSCRIBE', StateData};
                                     {finish, StateData} -> {'COMPLETED', StateData}
                                 end,
     {next_state, NextState, NewStateData}.
 
-'REGISTERING'({handle_yate_event, _YateEvent}, State) ->
-    {NextState, NewStateData} = case run_registering_sequence(State) of 
-        {continue, StateData} -> {'REGISTERING', StateData};
+'SUBSCRIBE'({handle_yate_event, _YateEvent}, State) ->
+    {NextState, NewStateData} = case run_request_queue(State) of 
+        {continue, StateData} -> {'SUBSCRIBE', StateData};
         {finish, StateData} -> {'COMPLETED', StateData}
     end,
     {next_state, NextState, NewStateData}.
@@ -134,6 +138,16 @@ init([]) ->
 %%    Reply = ok,
 %%    {reply, Reply, StateName, State}.
 
+handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateData) ->
+    SubscribeConfig = StateData#state.subscribe_config,
+    Reply = case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
+        none -> unknown;
+        {_MessageName, 
+         install, InstallModule, 
+         watch, WatchModuleList} -> {install, InstallModule, watch, WatchModuleList}
+    end,
+    {reply, Reply, StateName, StateData}.
+
 %%--------------------------------------------------------------------
 %% Function: 
 %% handle_info(Info,StateName,State)-> {next_state, NextStateName, NextState}|
@@ -169,29 +183,30 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-start_registering_sequence(State) ->
-    Queue = queue:from_list(State#state.registering_config),
-    RegisteringState = State#state{registering_queue=Queue},
-    run_registering_sequence(RegisteringState).
+start_request_queue(State) ->
+    Queue = queue:from_list(State#state.subscribe_config),
+    SubscribeState = State#state{subscribe_queue=Queue},
+    run_request_queue(SubscribeState).
 
-run_registering_sequence(State) ->
-    {Out, NewQueue} = queue:out(State#state.registering_queue),
-    NewState = State#state{registering_queue = NewQueue},
+run_request_queue(State) ->
+    {Out, NewQueue} = queue:out(State#state.subscribe_queue),
+    NewState = State#state{subscribe_queue = NewQueue},
     case Out of
         empty -> {finish, NewState }; 
-        {value, V} -> send_registration_request(V),
+        {value, V} -> send_subscribe_request(V),
                       {continue, NewState}
     end.
     
 
-send_registration_request({MessageName, install, undefined, watch, _WatchList}) ->
+send_subscribe_request({MessageName, install, undefined, watch, _WatchList}) ->
     YateEvent = yate_event:new(watch, [{name, MessageName}]),
-    YateEventManager = yaterl_config:yate_event_mgr(),
-    YateEventManager:send_yate_event(YateEvent),
+    send_to_yate(YateEvent),
     ok;
-send_registration_request({MessageName, install, _InstallModule, watch, _WatchList}) ->
+send_subscribe_request({MessageName, install, _InstallModule, watch, _WatchList}) ->
     YateEvent = yate_event:new(install, [{name, MessageName}]),
-    YateEventManager = yaterl_config:yate_event_mgr(),
-    YateEventManager:send_yate_event(YateEvent),
+    send_to_yate(YateEvent),
     ok.
 
+send_to_yate(YateEvent) ->
+    YateConnectionManager = yaterl_config:yate_connection_mgr(),
+    YateConnectionManager:send_binary_data(yate_encode:to_binary(YateEvent)).

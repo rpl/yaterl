@@ -21,7 +21,7 @@
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
 %% @doc 'yate_event_mgr' is a gen_srv erlang process that handle incoming yate events
--module(mockup_yate_registering_mgr).
+-module(mockup_yate_subscribe_mgr).
 
 -behaviour(gen_server).
 
@@ -32,12 +32,12 @@
 
 %% internal callbacks
 -export([
-         start_message_registering/0
+         start_subscribe_sequence/0
         ]).
 
 %% test helper API
 -export([
-         is_start_message_registering_called/0
+         is_start_subscribe_sequence_called/0
         ]).
 
 %% gen_server callbacks
@@ -47,7 +47,7 @@
 -define(SERVER, ?MODULE).
 
 %% mockup state
--record(state, {start_message_registering_called}).
+-record(state, {start_subscribe_sequence_called}).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  
 %% @headerfile "../include/yate.hrl"
@@ -57,8 +57,8 @@
 %% Test helpers API
 %%====================================================================
 
-is_start_message_registering_called() ->
-    gen_server:call(?SERVER, is_start_message_registering_called).
+is_start_subscribe_sequence_called() ->
+    gen_server:call(?SERVER, is_start_subscribe_sequence_called).
 
 %%====================================================================
 %% API
@@ -67,8 +67,8 @@ is_start_message_registering_called() ->
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-start_message_registering() ->
-    gen_server:call(?SERVER, start_message_registering_called).    
+start_subscribe_sequence() ->
+    gen_server:call(?SERVER, start_subscribe_sequence_called).    
 
 %%====================================================================
 %% gen_server callbacks
@@ -77,11 +77,11 @@ start_message_registering() ->
 init([]) ->
     {ok, #state{}}.
 
-handle_call(start_message_registering_called, From, State) ->
-    NewState = State#state{start_message_registering_called=true},
+handle_call(start_subscribe_sequence_called, From, State) ->
+    NewState = State#state{start_subscribe_sequence_called=true},
     {reply, ok, NewState};
-handle_call(is_start_message_registering_called, _From, State) ->
-    Reply = State#state.start_message_registering_called,
+handle_call(is_start_subscribe_sequence_called, _From, State) ->
+    Reply = State#state.start_subscribe_sequence_called,
     {reply, Reply, State}.
 
 handle_info({nodedown, Node}, State) ->

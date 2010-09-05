@@ -32,7 +32,7 @@
          start_link/0,         
          get_yate_connection/0,
          is_connected/0,
-         send_yate_event/1
+         send_binary_data/1
         ]).
 
 %% internal callbacks
@@ -78,7 +78,6 @@ set_yate_connection(local, YateConnection_Module) ->
                           [YateConnection_Module]),
     Reply = gen_server:call(?SERVER, {set_yate_connection,
                                       YateConnection_Module}),
-    init_yate_event_manager(),
     Reply;
 set_yate_connection({remote, YateConnection_NodeName}, YateConnection_Module) ->
     error_logger:info_msg("yate_control_srv set_yate_connection remote: ~w - ~w~n", 
@@ -87,8 +86,6 @@ set_yate_connection({remote, YateConnection_NodeName}, YateConnection_Module) ->
                                       YateConnection_NodeName,
                                       YateConnection_Module
                                      }),
-    %% TODO: run module registering
-    init_yate_event_manager(),
     Reply.
 
 %% @doc: get current yate connection
@@ -106,8 +103,8 @@ is_connected() ->
 
 %% @doc: send a yate event and return immediatelly
 %% @spec: (YateEvent::yate_event()) -> ok
-send_yate_event(YateEvent) ->
-    gen_server:cast(?SERVER, {send_yate_event, YateEvent}).
+send_binary_data(Data) ->
+    gen_server:cast(?SERVER, {send_binary_data, Data}).
 
 %% @doc: receive binary data from current active connection and return immediatelly
 %% @spec: (Data::binary()) -> ok
@@ -149,6 +146,7 @@ handle_call(is_connected, _From, State) ->
 handle_call({set_yate_connection, YateConnection_ModuleName}, 
             _From, State) ->
     NewState = State#state{yate_connection = {local, YateConnection_ModuleName}},
+    start_yate_message_subscribe_sequence(),
     Reply = ok,
     {reply, Reply, NewState};
 handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_ModuleName}, 
@@ -156,12 +154,13 @@ handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_Module
     NewState = State#state{yate_connection = {remote, YateConnection_NodeName,
                                               YateConnection_ModuleName}},
     erlang:monitor_node(YateConnection_NodeName, true),
+    start_yate_message_subscribe_sequence(),
     Reply = ok,
     {reply, Reply, NewState}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling cast messages
 %%
-%% <b>send_yate_event</b>: send a yate event to the current active connection
+%% <b>send_binary_data</b>: send a yate event to the current active connection
 %% and return immediatelly
 %%      
 %% <b>received_binary_data</b>: receive forwarded binary data from the 
@@ -169,17 +168,16 @@ handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_Module
 %%
 %% @spec: (Msg::Request, State) -> Reply
 %% where
-%%   Request = {send_yate_event, YateEvent} | {received_binary_data, Data}
+%%   Request = {send_binary_data, Data} | {received_binary_data, Data}
 %%   YateEvent = yate_event()
 %%   Data = binary()
 %%   Reply = {noreply, State}
-handle_cast({send_yate_event, YateEvent}, State) ->
-    send_to_yate_connection(State#state.yate_connection, YateEvent),
+handle_cast({send_binary_data, Data}, State) ->
+    send_to_yate_connection(State#state.yate_connection, Data),
     {noreply, State};
 handle_cast({received_binary_data, Data}, State) ->
     error_logger:info_msg("yate_connection_mgr RECEIVED: ~s~n", [Data]),
-    YateEvent = yate_decode:from_binary(Data),
-    send_to_yate_event_manager(YateEvent),
+    process_incoming_data(Data),
     {noreply, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling all non call/cast messages
@@ -213,18 +211,19 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%--------------------------------------------------------------------
 
-send_to_yate_connection({local, YateConnection_ModuleName}, YateEvent) ->
-    YateConnection_ModuleName:send_binary_data(yate_encode:to_binary(YateEvent));
+send_to_yate_connection({local, YateConnection_ModuleName}, Data) ->
+    YateConnection_ModuleName:send_binary_data(Data);
 send_to_yate_connection({remote, YateConnection_NodeName,
-                                    YateConnection_ModuleName}, YateEvent) ->
+                                    YateConnection_ModuleName}, Data) ->
     rpc:cast(YateConnection_NodeName, YateConnection_ModuleName,
-             send_binary_data, [yate_encode:to_binary(YateEvent)]).
+             send_binary_data, [Data]).
 
-send_to_yate_event_manager(YateEvent) ->
-    YateEventManager_ModuleName = yaterl_config:yate_event_mgr(),
-    YateEventManager_ModuleName:handle_yate_event(YateEvent).
+process_incoming_data(Data) ->
+    YateEventSrv = yaterl_config:yate_incoming_event_srv(),
+    Pid = YateEventSrv:start(Data),
+    YateEventSrv:run(Pid).
     
-init_yate_event_manager() ->
-    YateEventManager_ModuleName = yaterl_config:yate_event_mgr(),
-    YateEventManager_ModuleName:new_connection_available().
+start_yate_message_subscribe_sequence() ->
+    YateSubscribeManager_ModuleName = yaterl_config:yate_subscribe_mgr(),
+    YateSubscribeManager_ModuleName:start_subscribe_sequence().
 

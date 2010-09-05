@@ -32,14 +32,14 @@
 
 %% internal callbacks
 -export([
-         send_yate_event/1
+         send_binary_data/1
         ]).
 
 %% test helper API
 -export([
          notify_new_connection_available/0,
          pop_outgoing_data/0,
-         fake_received_yate_event/1
+         fake_received_data/1
         ]).
 
 %% gen_server callbacks
@@ -68,8 +68,8 @@ pop_outgoing_data() ->
     gen_server:call(?SERVER, wait_outgoing_data),
     gen_server:call(?SERVER, pop_outgoing_data).
 
-fake_received_yate_event(YateEvent) ->
-    gen_server:call(?SERVER, {fake_received_yate_event, YateEvent}).
+fake_received_data(Data) ->
+    gen_server:call(?SERVER, {fake_received_data, Data}).
 
 %%====================================================================
 %% API
@@ -78,8 +78,8 @@ fake_received_yate_event(YateEvent) ->
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-send_yate_event(YateEvent) ->
-    gen_server:call(?SERVER, {send_yate_event, YateEvent}).    
+send_binary_data(Data) ->
+    gen_server:call(?SERVER, {send_binary_data, Data}).    
 
 %%====================================================================
 %% gen_server callbacks
@@ -89,7 +89,7 @@ init([]) ->
     {ok, #state{outgoing_data=queue:new()}}.
 
 handle_call(notify_new_connection_available, _From, State) ->
-    YateEventMgr_Module = yaterl_config:yate_event_mgr(),
+    YateEventMgr_Module = yaterl_config:yate_subscribe_mgr(),
     YateEventMgr_Module:new_connection_available(),
     {reply, ok, State};
 handle_call(wait_outgoing_data, From, State) ->
@@ -99,12 +99,13 @@ handle_call(pop_outgoing_data, _From, State) ->
     {{value, Reply}, OutgoingData} = queue:out(State#state.outgoing_data),
     NewState = State#state{outgoing_data=OutgoingData},
     {reply, Reply, NewState};
-handle_call({fake_received_yate_event, YateEvent}, _From, State) ->
-    YateEventMgr_Module = yaterl_config:yate_event_mgr(),
-    YateEventMgr_Module:handle_yate_event(YateEvent),
+handle_call({fake_received_data, Data}, _From, State) ->
+    YateEventSrv = yaterl_config:yate_incoming_event_srv(),
+    Pid = YateEventSrv:start(Data),
+    YateEventSrv:run(Pid),
     {reply, ok, State};
-handle_call({send_yate_event, YateEvent}, _From, State) ->
-    NewState = State#state{outgoing_data=queue:in(YateEvent, 
+handle_call({send_binary_data, Data}, _From, State) ->
+    NewState = State#state{outgoing_data=queue:in(Data, 
                                                   State#state.outgoing_data)},
     gen_server:reply(State#state.wait_outgoing_data_from, ok),
     {reply, ok, NewState}.
