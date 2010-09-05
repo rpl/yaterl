@@ -57,7 +57,7 @@ handle_cast(run, State) ->
     Data = State#state.data,
     YateEvent = yate_decode:from_binary(Data),
     processing_yate_event(YateEvent),
-    {stop, normal}.
+    {stop, normal, State}.
 
 %%--------------------------------------------------------------------
 %% Function: terminate(Reason, State) -> void()
@@ -98,7 +98,7 @@ processing_by_type(message, YateEvent) ->
     case ResolvedRoute of 
         unknown -> ok; %%% TODO: LOG AND EXIT            
         {install, InstallModule,
-         watch, [WatchModuleList]} -> route_to_custom_handlers(YateEvent, 
+         watch, WatchModuleList} -> route_to_custom_handlers(YateEvent, 
                                                                InstallModule, 
                                                                WatchModuleList)
     end.
@@ -118,6 +118,7 @@ route_to_custom_handlers(YateEvent, undefined, []) ->
 route_to_custom_handlers(YateEvent, InstallModule, []) ->
     %%% TODO: CALL, REPLY AND EXIT
     ct:pal("call"),
+    route_to_install_module(YateEvent, InstallModule),
     ok;
 route_to_custom_handlers(YateEvent, undefined, WatchModuleList) ->
     %%% TODO: CAST AND EXIT

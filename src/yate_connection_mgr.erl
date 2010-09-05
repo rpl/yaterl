@@ -220,7 +220,7 @@ send_to_yate_connection({remote, YateConnection_NodeName,
 
 process_incoming_data(Data) ->
     YateEventSrv = yaterl_config:yate_incoming_event_srv(),
-    Pid = YateEventSrv:start(Data),
+    {ok, Pid} = YateEventSrv:start(Data),
     YateEventSrv:run(Pid).
     
 start_yate_message_subscribe_sequence() ->

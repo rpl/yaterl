@@ -32,12 +32,15 @@
 
 %% internal callbacks
 -export([
-         start_subscribe_sequence/0
+         start_subscribe_sequence/0,
+         handle_yate_event/1,
+         resolve_custom_module/1
         ]).
 
 %% test helper API
 -export([
-         is_start_subscribe_sequence_called/0
+         is_start_subscribe_sequence_called/0,
+         wait_for_event/1
         ]).
 
 %% gen_server callbacks
@@ -47,7 +50,9 @@
 -define(SERVER, ?MODULE).
 
 %% mockup state
--record(state, {start_subscribe_sequence_called}).
+-record(state, {start_subscribe_sequence_called,
+               wait_for_event_from,
+               yate_event}).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  
 %% @headerfile "../include/yate.hrl"
@@ -60,6 +65,9 @@
 is_start_subscribe_sequence_called() ->
     gen_server:call(?SERVER, is_start_subscribe_sequence_called).
 
+wait_for_event(YateEvent1) ->
+    gen_server:call(?SERVER, {wait_for_event, YateEvent1}).
+
 %%====================================================================
 %% API
 %%====================================================================
@@ -69,6 +77,12 @@ start_link() ->
 
 start_subscribe_sequence() ->
     gen_server:call(?SERVER, start_subscribe_sequence_called).    
+
+handle_yate_event(YateEvent) ->
+    gen_server:call(?SERVER, {handle_yate_event, YateEvent}).
+
+resolve_custom_module(YateEvent) ->
+    {install, mockup_gen_yate_mod, watch, []}.
 
 %%====================================================================
 %% gen_server callbacks
@@ -82,7 +96,14 @@ handle_call(start_subscribe_sequence_called, From, State) ->
     {reply, ok, NewState};
 handle_call(is_start_subscribe_sequence_called, _From, State) ->
     Reply = State#state.start_subscribe_sequence_called,
-    {reply, Reply, State}.
+    {reply, Reply, State};
+handle_call({wait_for_event, YateEvent1}, From, State) ->
+    NewState = State#state{wait_for_event_from=From, yate_event=YateEvent1},
+    {noreply, NewState};
+handle_call({handle_yate_event, YateEvent}, From, State) ->
+    YateEvent = State#state.yate_event,
+    gen_server:reply(State#state.wait_for_event_from, ok),
+    {reply, ok, State}.
 
 handle_info({nodedown, Node}, State) ->
     error_logger:info_msg("NODE DOWN: ~w~n", [Node]),

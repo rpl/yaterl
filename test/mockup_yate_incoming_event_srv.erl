@@ -45,7 +45,7 @@ is_spawned_and_run_called(YateEvent) ->
 start(YateEvent) ->
     ?CT_LOG(YateEvent),
     gen_server:cast(?SERVER, {start, YateEvent}),
-    fake_pid.
+    {ok, fake_pid}.
 
 run(Pid) ->
     ?CT_LOG("Called RUN on Spawned Server"),
