@@ -82,7 +82,7 @@ handle_yate_event(YateEvent) ->
     gen_server:call(?SERVER, {handle_yate_event, YateEvent}).
 
 resolve_custom_module(YateEvent) ->
-    {install, mockup_gen_yate_mod, watch, []}.
+    {install, mockup_gen_yate_mod, watch, [mockup_gen_yate_mod]}.
 
 %%====================================================================
 %% gen_server callbacks

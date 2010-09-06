@@ -93,53 +93,41 @@ processing_by_type(unwatch, YateEvent) ->
     route_to_yate_subscribe_mgr(YateEvent);
 processing_by_type(uninstall, YateEvent) ->
     route_to_yate_subscribe_mgr(YateEvent);
+processing_by_type(error, YateEvent) ->
+    error_logger:info_msg("YATE ERROR: ~p~n", [YateEvent]);
 processing_by_type(message, YateEvent) ->
     ResolvedRoute = resolve_custom_module(YateEvent),
     case ResolvedRoute of 
         unknown -> ok; %%% TODO: LOG AND EXIT            
-        {install, InstallModule,
-         watch, WatchModuleList} -> route_to_custom_handlers(YateEvent, 
-                                                               InstallModule, 
-                                                               WatchModuleList)
+        {ModuleName, SubscribeType} -> route_to_custom_module(YateEvent,
+                                                              ModuleName, 
+                                                              SubscribeType)
     end.
 
 resolve_custom_module(YateEvent) ->
-    YateSubscribeMgr = yaterl_config:yate_subscribe_mgr(),
-    YateSubscribeMgr:resolve_custom_module(YateEvent).
+    ModuleName = yaterl_config:yate_custom_module_name(),
+    SubscribeType = yate_subscribe_mgr:resolve_custom_module(YateEvent),
+    {ModuleName, SubscribeType}.
 
 route_to_yate_subscribe_mgr(YateEvent) ->
     YateSubscribeMgr = yaterl_config:yate_subscribe_mgr(),
     YateSubscribeMgr:handle_yate_event(YateEvent).
 
-route_to_custom_handlers(YateEvent, undefined, []) ->
-    %%% TODO: LOG AND EXIT
-    ct:pal("empty_config_line"),
-    ok;
-route_to_custom_handlers(YateEvent, InstallModule, []) ->
+route_to_custom_module(YateEvent, InstallModule, install) ->
     %%% TODO: CALL, REPLY AND EXIT
     ct:pal("call"),
     route_to_install_module(YateEvent, InstallModule),
     ok;
-route_to_custom_handlers(YateEvent, undefined, WatchModuleList) ->
+route_to_custom_module(YateEvent, WatchModule, watch) ->
     %%% TODO: CAST AND EXIT
     ct:pal("cast"),
-    ok;
-route_to_custom_handlers(YateEvent, InstallModule, WatchModuleList) ->
-    %%% TODO: CALL, REPLY, CAST AND EXIT
-    ct:pal("call_and_cast"),
+    route_to_watch_module(YateEvent, WatchModule),
     ok.
 
 route_to_install_module(YateEvent, InstallModule) ->
     Reply = InstallModule:handle_install_message(YateEvent),
     YateConnectionMgr = yaterl_config:yate_connection_mgr(),
     YateConnectionMgr:send_binary_data(yate_encode:to_binary(Reply)).
-
-route_to_watch_modulelist(YateEvent, []) ->
-    ok;
-route_to_watch_modulelist(YateEvent, WatchModuleList) ->
-    [H|T] = WatchModuleList,
-    route_to_watch_module(YateEvent, H),
-    route_to_watch_modulelist(YateEvent, T).
 
 route_to_watch_module(YateEvent, WatchModule) ->
     WatchModule:handle_watch_message(YateEvent).

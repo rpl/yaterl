@@ -80,8 +80,6 @@ set_yate_connection(local, YateConnection_Module) ->
                                       YateConnection_Module}),
     Reply;
 set_yate_connection({remote, YateConnection_NodeName}, YateConnection_Module) ->
-    error_logger:info_msg("yate_control_srv set_yate_connection remote: ~w - ~w~n", 
-                          [YateConnection_NodeName, YateConnection_Module]),
     Reply = gen_server:call(?SERVER, {set_yate_connection,                                                                       
                                       YateConnection_NodeName,
                                       YateConnection_Module
@@ -151,6 +149,8 @@ handle_call({set_yate_connection, YateConnection_ModuleName},
     {reply, Reply, NewState};
 handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_ModuleName}, 
             _From, State) ->
+    error_logger:info_msg("yate_connection_mgr set_yate_connection remote: ~w - ~w~n", 
+                          [YateConnection_NodeName, YateConnection_ModuleName]),
     NewState = State#state{yate_connection = {remote, YateConnection_NodeName,
                                               YateConnection_ModuleName}},
     erlang:monitor_node(YateConnection_NodeName, true),
@@ -215,6 +215,7 @@ send_to_yate_connection({local, YateConnection_ModuleName}, Data) ->
     YateConnection_ModuleName:send_binary_data(Data);
 send_to_yate_connection({remote, YateConnection_NodeName,
                                     YateConnection_ModuleName}, Data) ->
+    error_logger:info_msg("SEND TO REMOTE YATE CONNECTION: ~p,~p - ~p~n", [YateConnection_NodeName, YateConnection_ModuleName, Data]),
     rpc:cast(YateConnection_NodeName, YateConnection_ModuleName,
              send_binary_data, [Data]).
 

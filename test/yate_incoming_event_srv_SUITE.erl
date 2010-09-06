@@ -57,4 +57,4 @@ handle_message(_Config) ->
     {ok, Pid1} = yate_incoming_event_srv:start(Data1),
     yate_incoming_event_srv:run(Pid1),
     test_server:sleep(3000),
-    ct:fail(testing).
+    ok. %ct:fail(testing).

@@ -4,7 +4,7 @@
          behaviour_info/1,
 
          send_yate_message/1,
-         reply_yate_message/1,
+         reply_to_yate_message/1,
          ack_yate_message/1
         ]).
 
@@ -14,8 +14,8 @@
 %%====================================================================
 
 behaviour_info(callbacks) ->
-    [{received_watch_message, 1},
-     {received_install_message, 1}];
+    [{handle_watch_message, 1},
+     {handle_install_message, 1}];
 behaviour_info(_Other) ->
     undefined.
 
@@ -25,13 +25,18 @@ behaviour_info(_Other) ->
 
 send_yate_message(YateMessage) ->
     YateConnMgr = yaterl_config:yate_connection_mgr(),
-    YateConnMgr:send_binary_data(yate_encode:to_binary(YateMessage)).
+    Data = yate_encode:to_binary(YateMessage),
+    YateConnMgr:send_binary_data(Data).
 
-reply_yate_message(YateMessage) ->
+reply_to_yate_message(YateMessage) ->
     YateConnMgr = yaterl_config:yate_connection_mgr(),
-    YateConnMgr:send_binary_data(yate_encode:to_binary(YateMessage)).
+    Reply = yate_message:reply(YateMessage, true),
+    Data = yate_encode:to_binary(Reply),
+    YateConnMgr:send_binary_data(Data).
 
 ack_yate_message(YateMessage) ->
     YateConnMgr = yaterl_config:yate_connection_mgr(),
-    YateConnMgr:send_binary_data(yate_encode:to_binary(YateMessage)).
-    
+    Reply = yate_message:reply(YateMessage, false),
+    Data = yate_encode:to_binary(Reply),
+    YateConnMgr:send_binary_data(Data).
+

@@ -48,7 +48,9 @@
          
          is_processed/1,
          set_processed/1,
-         set_processed/2
+         set_processed/2,
+         reply/1,
+         reply/2
         ]).
 
 %%====================================================================
@@ -173,6 +175,15 @@ set_processed(true, Message) ->
     yate_event:change_event_attribute(processed, "true", Message);
 set_processed(false, Message) ->
     yate_event:change_event_attribute(processed, "false", Message).
+
+reply(Message) ->
+    Msg1 = Message#yate_event{direction=answer},
+    set_processed(false, Msg1).
+
+reply(Message, Processed) ->
+    Msg1 = Message#yate_event{direction=answer},
+    set_processed(Processed, Msg1).
+    
 
 %%====================================================================
 %% Internal functions

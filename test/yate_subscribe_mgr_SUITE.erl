@@ -24,6 +24,7 @@ suite() -> [{timetrap,{seconds,10}}].
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
     yaterl_config:yate_subscribe_mgr(yate_subscribe_mgr),
+    yaterl_config:yate_incoming_event_srv(mockup_yate_incoming_event_srv),
     yaterl_config:yate_connection_mgr(mockup_yate_connection_mgr),
     Config.
 
@@ -44,8 +45,8 @@ all() -> [
 new_connection_started_initialization_sequence(_Config) ->
     yaterl_config:yate_message_subscribe_configlist(
       [
-       { "test.message", install, a_fake_module_handler, watch, [] },
-       { "test2.message", install, a_fake_module_handler, watch, [another_fake_module] }
+       { "test.message", install },
+       { "test2.message", watch }
       ]),
     % 1) start event manager mockup:
     mockup_yate_connection_mgr:start_link(),    
@@ -66,7 +67,7 @@ new_connection_started_initialization_sequence(_Config) ->
     yate_subscribe_mgr:handle_yate_event(YateEventReply1),
     % 6) assert next registration message
     Data2 = mockup_yate_connection_mgr:pop_outgoing_data(),
-    <<"%%>install::test2.message">> = Data2,
+    <<"%%>watch:test2.message">> = Data2,
     'SUBSCRIBE' = ?GET_SRV_STATUS(yate_subscribe_mgr),
     
     % 7) send next fake registration and last state on empty registration queue
