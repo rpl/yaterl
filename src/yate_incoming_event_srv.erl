@@ -125,9 +125,9 @@ route_to_custom_module(YateEvent, WatchModule, watch) ->
     ok.
 
 route_to_install_module(YateEvent, InstallModule) ->
-    Reply = InstallModule:handle_install_message(YateEvent),
+    ReplyData = InstallModule:handle_install_message(YateEvent),
     YateConnectionMgr = yaterl_config:yate_connection_mgr(),
-    YateConnectionMgr:send_binary_data(yate_encode:to_binary(Reply)).
+    YateConnectionMgr:send_binary_data(ReplyData).
 
 route_to_watch_module(YateEvent, WatchModule) ->
     WatchModule:handle_watch_message(YateEvent).

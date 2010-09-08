@@ -29,14 +29,10 @@ send_yate_message(YateMessage) ->
     YateConnMgr:send_binary_data(Data).
 
 reply_to_yate_message(YateMessage) ->
-    YateConnMgr = yaterl_config:yate_connection_mgr(),
     Reply = yate_message:reply(YateMessage, true),
-    Data = yate_encode:to_binary(Reply),
-    YateConnMgr:send_binary_data(Data).
+    _Data = yate_encode:to_binary(Reply).
 
 ack_yate_message(YateMessage) ->
-    YateConnMgr = yaterl_config:yate_connection_mgr(),
     Reply = yate_message:reply(YateMessage, false),
-    Data = yate_encode:to_binary(Reply),
-    YateConnMgr:send_binary_data(Data).
+    _Data = yate_encode:to_binary(Reply).
 
