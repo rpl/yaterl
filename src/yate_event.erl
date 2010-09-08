@@ -40,6 +40,11 @@
          is_message/1,
          is_error/1,
 
+         type/1,
+         type/2,
+         direction/1,
+         direction/2,
+
          attr/2,
          attr/3,
          attrs/1,
@@ -105,6 +110,18 @@ is_message(YateEvent) ->
 %% @spec: (YateEvent::yate_event()) -> true | false
 is_error(YateEvent) ->
     YateEvent#yate_event.type =:= error.
+
+type(YateEvent) ->
+    YateEvent#yate_event.type.
+
+type(YateEvent, Value) ->
+    YateEvent#yate_event{type=Value}.
+
+direction(YateEvent) ->
+    YateEvent#yate_event.direction.
+
+direction(YateEvent, Value) ->
+    YateEvent#yate_event{direction=Value}.
 
 %% @doc: Get attribute value from a yate event
 %% @spec: (Key::atom(), YateEvent::yate_event()) -> Value::string()
