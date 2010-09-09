@@ -90,7 +90,7 @@ ack_yate_message_before_die(State) ->
     {_HandlerModule, SubscribeType} = resolve_custom_module(YateEvent),
 
     case SubscribeType of
-        install -> yaterl_logger:warn_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
+        install -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
                                          [State#state.data]),
                    ReplyData = gen_yate_mod:ack_yate_message(YateEvent),
                    YateConnectionMgr = yaterl_config:yate_connection_mgr(),
@@ -132,13 +132,11 @@ route_to_yate_subscribe_mgr(YateEvent) ->
     YateSubscribeMgr:handle_yate_event(YateEvent).
 
 route_to_custom_module(YateEvent, InstallModule, install) ->
-    %%% TODO: CALL, REPLY AND EXIT
-    ct:pal("call"),
+    yaterl_logger:info_msg("call custom handler"),
     route_to_install_module(YateEvent, InstallModule),
     ok;
 route_to_custom_module(YateEvent, WatchModule, watch) ->
-    %%% TODO: CAST AND EXIT
-    ct:pal("cast"),
+    yaterl_logger:info_msg("cast custom handler"),
     route_to_watch_module(YateEvent, WatchModule),
     ok.
 
