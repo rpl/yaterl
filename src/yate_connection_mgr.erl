@@ -62,20 +62,16 @@
 %% @doc: Starts the server
 %% @spec: () -> {ok,Pid} | ignore | {error,Error}
 start() ->
-    error_logger:info_msg("yate_connection_mgr start~n"),
     gen_server:start({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc: Starts the server
 %% @spec: () -> {ok,Pid} | ignore | {error,Error}
 start_link() ->
-    error_logger:info_msg("yate_connection_mgr start_link~n"),
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc: set current yate connection
 %% @spec: (NodeName::atom(), Module::atom()) -> ok 
 set_yate_connection(local, YateConnection_Module) ->
-    error_logger:info_msg("yate_connection_mgr set_yate_connection local: ~w~n", 
-                          [YateConnection_Module]),
     Reply = gen_server:call(?SERVER, {set_yate_connection,
                                       YateConnection_Module}),
     Reply;
@@ -116,7 +112,6 @@ received_binary_data(Data) ->
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Initiates the server
 %% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([]) ->
-    error_logger:info_msg("yate_connection_mgr init~n"),
     {ok, #state{}}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling call messages
@@ -143,13 +138,15 @@ handle_call(is_connected, _From, State) ->
 
 handle_call({set_yate_connection, YateConnection_ModuleName}, 
             _From, State) ->
+    yaterl_logger:info_msg("yate_connection_mgr set_yate_connection local: ~w~n", 
+                          [YateConnection_ModuleName]),
     NewState = State#state{yate_connection = {local, YateConnection_ModuleName}},
     start_yate_message_subscribe_sequence(),
     Reply = ok,
     {reply, Reply, NewState};
 handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_ModuleName}, 
             _From, State) ->
-    error_logger:info_msg("yate_connection_mgr set_yate_connection remote: ~w - ~w~n", 
+    yaterl_logger:info_msg("yate_connection_mgr set_yate_connection remote: ~w - ~w~n", 
                           [YateConnection_NodeName, YateConnection_ModuleName]),
     NewState = State#state{yate_connection = {remote, YateConnection_NodeName,
                                               YateConnection_ModuleName}},
@@ -173,10 +170,11 @@ handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_Module
 %%   Data = binary()
 %%   Reply = {noreply, State}
 handle_cast({send_binary_data, Data}, State) ->
+    yaterl_logger:info_msg("yate_connection_mgr SEND: ~s~n", [Data]),
     send_to_yate_connection(State#state.yate_connection, Data),
     {noreply, State};
 handle_cast({received_binary_data, Data}, State) ->
-    error_logger:info_msg("yate_connection_mgr RECEIVED: ~s~n", [Data]),
+    yaterl_logger:info_msg("yate_connection_mgr RECEIVED: ~s~n", [Data]),
     process_incoming_data(Data),
     {noreply, State}.
 
@@ -190,7 +188,7 @@ handle_cast({received_binary_data, Data}, State) ->
 %%   Node = atom()
 %%   Reply = {noreply, State}
 handle_info({nodedown, Node}, State) ->
-    error_logger:info_msg("NODE DOWN: ~w~n", [Node]),
+    yaterl_logger:error_msg("NODE DOWN: ~w~n", [Node]),
     {noreply, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling terminate sequence. 
@@ -215,7 +213,6 @@ send_to_yate_connection({local, YateConnection_ModuleName}, Data) ->
     YateConnection_ModuleName:send_binary_data(Data);
 send_to_yate_connection({remote, YateConnection_NodeName,
                                     YateConnection_ModuleName}, Data) ->
-    error_logger:info_msg("SEND TO REMOTE YATE CONNECTION: ~p,~p - ~p~n", [YateConnection_NodeName, YateConnection_ModuleName, Data]),
     rpc:cast(YateConnection_NodeName, YateConnection_ModuleName,
              send_binary_data, [Data]).
 

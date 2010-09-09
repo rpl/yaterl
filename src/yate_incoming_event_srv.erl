@@ -66,8 +66,12 @@ handle_cast(run, State) ->
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
 %%--------------------------------------------------------------------
-terminate(_Reason, _State) ->
-    ok.
+terminate(Reason, State) ->
+    case Reason of
+        normal -> ok;
+        _ -> ack_yate_message_before_die(State), 
+             ok
+    end.
 
 %%--------------------------------------------------------------------
 %% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
@@ -79,6 +83,20 @@ code_change(_OldVsn, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+ack_yate_message_before_die(State) ->
+    YateEvent = yate_decode:from_binary(State#state.data),
+    
+    {_HandlerModule, SubscribeType} = resolve_custom_module(YateEvent),
+
+    case SubscribeType of
+        install -> yaterl_logger:warn_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
+                                         [State#state.data]),
+                   ReplyData = gen_yate_mod:ack_yate_message(YateEvent),
+                   YateConnectionMgr = yaterl_config:yate_connection_mgr(),
+                   YateConnectionMgr:send_binary_data(ReplyData);
+        _ -> ok
+    end.
 
 processing_yate_event(YateEvent) ->
     Type = YateEvent#yate_event.type,
@@ -94,7 +112,7 @@ processing_by_type(unwatch, YateEvent) ->
 processing_by_type(uninstall, YateEvent) ->
     route_to_yate_subscribe_mgr(YateEvent);
 processing_by_type(error, YateEvent) ->
-    error_logger:info_msg("YATE ERROR: ~p~n", [YateEvent]);
+    yaterl_logger:error_msg("RECEIVED YATE ERROR: ~p~n", [YateEvent]);
 processing_by_type(message, YateEvent) ->
     ResolvedRoute = resolve_custom_module(YateEvent),
     case ResolvedRoute of 

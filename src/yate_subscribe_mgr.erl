@@ -77,7 +77,7 @@ init([]) ->
 %% called if a timeout occurs. 
 %%--------------------------------------------------------------------
 'STARTED'(start_subscribe_sequence, State) ->
-    error_logger:info_msg("start_subscribe_sequence~n"),
+    yaterl_logger:info_msg("start_subscribe_sequence~n"),
     {NextState, NewStateData} = case start_request_queue(State) of
                                     {continue, StateData} -> {'SUBSCRIBE', StateData};
                                     {finish, StateData} -> {'COMPLETED', StateData}
@@ -144,7 +144,7 @@ handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateDat
     SubscribeConfig = StateData#state.subscribe_config,
     Reply = case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
                 none -> unknown;
-                {_MessageName, install, Priority} -> install;
+                {_MessageName, install, _Priority} -> install;
                 {_MessageName, install} -> install;
                 {_MessageName, watch} -> watch
     end,
@@ -187,14 +187,14 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 
 start_request_queue(State) ->
     Queue = queue:from_list(State#state.subscribe_config),
-    error_logger:info_msg("SUBSCRIBE QUEUE: ~p~n", [Queue]),
+    yaterl_logger:info_msg("SUBSCRIBE QUEUE: ~p~n", [Queue]),
     SubscribeState = State#state{subscribe_queue=Queue},
     run_request_queue(SubscribeState).
 
 run_request_queue(State) ->
     {Out, NewQueue} = queue:out(State#state.subscribe_queue),
     NewState = State#state{subscribe_queue = NewQueue},
-    error_logger:info_msg("SEND FROM SUBSCRIBE QUEUE: ~p~n", [Out]),
+    yaterl_logger:info_msg("SEND FROM SUBSCRIBE QUEUE: ~p~n", [Out]),
     case Out of
         empty -> {finish, NewState }; 
         {value, V} -> send_subscribe_request(V),
@@ -216,6 +216,6 @@ send_subscribe_request({MessageName, watch}) ->
     ok.
 
 send_to_yate(YateEvent) ->
-    error_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
+    yaterl_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
     YateConnectionManager = yaterl_config:yate_connection_mgr(),
     YateConnectionManager:send_binary_data(yate_encode:to_binary(YateEvent)).

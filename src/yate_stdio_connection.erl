@@ -101,7 +101,7 @@ init([]) ->
 %%   Data = binary()
 %%   Reply = {reply, ok, State}
 handle_call({send_binary_data, Data}, _From, State) ->
-    error_logger:info_msg("SEND TO YATE ON STDIO: ~p~n", [Data]),
+    yaterl_logger:info_msg("SEND TO YATE ON STDIO: ~p~n", [Data]),
     io:fwrite(standard_error, "SENDING: ~s~n", [Data]),
     true = port_command(State#state.yate_port, <<Data/binary, "\n">>),
     {reply, ok, State};
@@ -142,6 +142,7 @@ handle_cast({received_binary_data, Data}, State) ->
 %%   Eol  = eol | noeol
 %%   Reply = {noreply, State}
 handle_info({_Port, {data, {Eol, Data}}}, State) when Eol==eol; Eol==noeol ->
+    yaterl_logger:info_msg("RECEIVED FROM YATE ON STDIO: ~p~n", [Data]),
     io:fwrite(standard_error, "READ: ~s~n", [Data]),
     received_binary_data(Data),
     {noreply, State};
@@ -174,7 +175,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 load_config_from_env() ->
     {YateConnectionMgr_NodeName, 
-     YateConnectionMgr_HostName} = yaterl_config:remote_yate_connection_mgr(),
+     YateConnectionMgr_HostName} = yaterl_config:whereis_yate_connection_mgr(),
     MaxBytesLine = yaterl_config:yate_connection_maxbytesline(),
     {YateConnectionMgr_NodeName, YateConnectionMgr_HostName, MaxBytesLine}.
 
@@ -199,7 +200,7 @@ register_to_yate_connection_mgr(YateConnectionMgr_NodeName, YateConnectionMgr_Ho
     % Ping yate_control node
     case net_adm:ping(YateConnectionMgr_FullNodeName) of
         pong -> ok;
-        pang -> error_logger:error_msg("ERROR: Yate Event Manager node '~s' is down~n", 
+        pang -> yaterl_logger:error_msg("ERROR: Yate Event Manager node '~s' is down~n", 
                                        [YateConnectionMgr_FullNodeName]),
                 exit(yate_connection_mgr_nodedown)            
     end,
