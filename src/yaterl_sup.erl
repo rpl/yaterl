@@ -32,13 +32,18 @@ init([Mode]) ->
 
 get_childs_spec(manager_only) ->
     YaterlLoggerSpec = ?CHILD(yaterl_logger, worker),
-    YateConnectionMgrSpec = ?CHILD(yate_connection_mgr, worker),
     YateSubscribeMgrSpec = ?CHILD(yate_subscribe_mgr, worker),
+    YateConnectionMgrSpec = ?CHILD(yate_connection_mgr, worker),
     [YaterlLoggerSpec, YateConnectionMgrSpec, YateSubscribeMgrSpec];
 get_childs_spec(stdio_connection_only) ->
     YaterlLoggerSpec = ?CHILD(yaterl_logger, worker),
     YateStdioConnectionSpec = ?CHILD(yate_stdio_connection, worker),
     [YaterlLoggerSpec, YateStdioConnectionSpec];
 get_childs_spec(all_in_one) ->
-    SpecList = get_childs_spec(stdio_connection_only) ++ get_childs_spec(manager_only),
-    ordspec:to_list(ordspec:from_list(SpecList)).
+    YaterlLoggerSpec = ?CHILD(yaterl_logger, worker),
+    YateSubscribeMgrSpec = ?CHILD(yate_subscribe_mgr, worker),
+    YateConnectionMgrSpec = ?CHILD(yate_connection_mgr, worker),
+    YateStdioConnectionSpec = ?CHILD(yate_stdio_connection, worker),
+    [YaterlLoggerSpec, YateSubscribeMgrSpec,
+     YateConnectionMgrSpec, YateStdioConnectionSpec]. 
+
