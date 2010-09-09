@@ -1,6 +1,6 @@
 #!/usr/bin/env escript
 %% -*- erlang -*-
-%%! -smp enable -sname yate_stdio_connection -noinput -pa /media/WORKS/ALCA/ERLANG/YATE/yaterl/ebin/ -config /media/WORKS/ALCA/ERLANG/YATE/yaterl/test_stdio
+%%! -smp enable -sname yate_stdio_connection -noinput -pa /media/WORKS/ALCA/ERLANG/YATE/yaterl/ebin/ -config /media/WORKS/ALCA/ERLANG/YATE/yaterl/examples/escripts/test_stdio
 -module(yate_stdio_connection).
 
 -export([main/1]).

@@ -1,0 +1,36 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+-module(pack).
+
+-export([main/1]).
+
+main(_) ->
+    Files = load_files("*", "ebin"),
+
+    case zip:create("mem", Files, [memory]) of
+        {ok, {"mem", ZipBin}} ->
+            Script = <<"#!/usr/bin/env escript\n%%!-sname yate_route_service -config yaterl_route_service -noinput\n", 
+                       ZipBin/binary>>,
+            
+            case file:write_file("yate_test_route", Script) of
+                ok ->
+                    ok;
+                {error, WriteError} ->
+                    io:format("Failed to write rebar script: ~p\n", [WriteError]),
+                    halt(1)
+            end;
+        {error, ZipError} ->
+            io:format("Failed to construct rebar script archive: ~p\n", [ZipError]),
+            halt(1)
+    end,
+
+    %% Finally, update executable perms for our script
+    [] = os:cmd("chmod u+x yate_test_route").
+
+load_files(Wildcard, Dir) ->
+    [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard, Dir)].
+
+read_file(Filename, Dir) ->
+    {ok, Bin} = file:read_file(filename:join(Dir, Filename)),
+    {Filename, Bin}.
