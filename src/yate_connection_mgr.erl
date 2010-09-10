@@ -28,7 +28,6 @@
 
 %% API
 -export([
-         start/0,
          start_link/0,         
          get_yate_connection/0,
          is_connected/0,
@@ -58,11 +57,6 @@
 %%====================================================================
 %% API
 %%====================================================================
-
-%% @doc: Starts the server
-%% @spec: () -> {ok,Pid} | ignore | {error,Error}
-start() ->
-    gen_server:start({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc: Starts the server
 %% @spec: () -> {ok,Pid} | ignore | {error,Error}

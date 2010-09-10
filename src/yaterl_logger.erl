@@ -53,19 +53,19 @@ log_level(Value) ->
     gen_server:call(?SERVER, {log_level, Value}).
 
 error_msg(Msg) ->
-    gen_server:cast(?SERVER, {error_msg, Msg}).
+    gen_server:cast(?SERVER, {error_msg, Msg, []}).
 
 error_msg(Msg, DataList) ->
     gen_server:cast(?SERVER, {error_msg, Msg, DataList}).
 
 warning_msg(Msg) ->
-    gen_server:cast(?SERVER, {warning_msg, Msg}).
+    gen_server:cast(?SERVER, {warning_msg, Msg, []}).
 
 warning_msg(Msg, DataList) ->
     gen_server:cast(?SERVER, {warning_msg, Msg, DataList}).
 
 info_msg(Msg) ->
-    gen_server:cast(?SERVER, {info_msg, Msg}).
+    gen_server:cast(?SERVER, {info_msg, Msg, []}).
 
 info_msg(Msg, DataList) ->
     gen_server:cast(?SERVER, {info_msg, Msg, DataList}).
@@ -109,20 +109,11 @@ handle_call({log_level, Value}, _From, State) ->
 %%                                      {stop, Reason, State}
 %% Description: Handling cast messages
 %%--------------------------------------------------------------------
-handle_cast({error_msg, Msg}, State) ->
-    check_log_level_and_run(error, State#state.log_level, Msg, []),
-    {noreply, State};
 handle_cast({error_msg, Msg, DataList}, State) ->
     check_log_level_and_run(error, State#state.log_level, Msg, DataList),
     {noreply, State};
-handle_cast({warning_msg, Msg}, State) ->
-    check_log_level_and_run(warning, State#state.log_level, Msg, []),
-    {noreply, State};
 handle_cast({warning_msg, Msg, DataList}, State) ->
     check_log_level_and_run(warning, State#state.log_level, Msg, DataList),
-    {noreply, State};
-handle_cast({info_msg, Msg}, State) ->
-    check_log_level_and_run(info, State#state.log_level, Msg, []),
     {noreply, State};
 handle_cast({info_msg, Msg, DataList}, State) ->
     check_log_level_and_run(info, State#state.log_level, Msg, DataList),
