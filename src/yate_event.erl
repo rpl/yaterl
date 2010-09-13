@@ -111,16 +111,28 @@ is_message(YateEvent) ->
 is_error(YateEvent) ->
     YateEvent#yate_event.type =:= error.
 
+%% @doc: Get type from a yate event
+%% @spec: (YateEvent::yate_event()) -> 
+%%            watch | unwatch | install | uninstall | setlocal | 
+%%            output | error | message
 type(YateEvent) ->
     YateEvent#yate_event.type.
 
-type(YateEvent, Value) ->
+%% @doc: Change yate event type
+%% @spec: (Value::string(), YateEvent::yate_event()) -> 
+%%        NewYateEvent::yate_event()
+type(Value, YateEvent) ->
     YateEvent#yate_event{type=Value}.
 
+%% @doc: Get attribute value from a yate event
+%% @spec: (YateEvent::yate_event()) -> incoming | answer | outgoing
 direction(YateEvent) ->
     YateEvent#yate_event.direction.
 
-direction(YateEvent, Value) ->
+%% @doc: Change yate event direction
+%% @spec: (Value::string(), YateEvent::yate_event()) -> 
+%%        NewYateEvent::yate_event()
+direction(Value, YateEvent) ->
     YateEvent#yate_event{direction=Value}.
 
 %% @doc: Get attribute value from a yate event
@@ -156,7 +168,7 @@ attrs(NewAttrs, YateEvent) ->
 %% Internal functions
 %%====================================================================
 
-%% INTERNAL: change attribute's value
+%% @doc <b>[INTERNAL API]</b>: change attribute's value
 change_event_attribute(Key, NewValue, YateEvent) ->
     NewAttrs = proplists:delete(Key, YateEvent#yate_event.attrs),
     YateEvent#yate_event{attrs=[ {Key, NewValue} | NewAttrs ]}.    

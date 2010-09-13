@@ -50,10 +50,6 @@
 %% ```#state{yate_connection}'''
 -record(state, {yate_connection}).
 
-%% import yate_event record definition, and other utils (yate exceptions helpers)  
-%% @headerfile "../include/yate.hrl"
--include("yate.hrl").
-
 %%====================================================================
 %% API
 %%====================================================================
@@ -64,7 +60,9 @@ start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
 %% @doc: set current yate connection
-%% @spec: (NodeName::atom(), Module::atom()) -> ok 
+%% @spec: (YateConnection_Position, YateConnection_ModuleName::string()) -> ok 
+%% where
+%%    YateConnection_Position = local | {remote, YateConnection_NodeName::string()}
 set_yate_connection(local, YateConnection_Module) ->
     Reply = gen_server:call(?SERVER, {set_yate_connection,
                                       YateConnection_Module}),
@@ -83,14 +81,13 @@ set_yate_connection({remote, YateConnection_NodeName}, YateConnection_Module) ->
 get_yate_connection() ->
     gen_server:call(?SERVER, get_yate_connection).
 
-%% @doc: TBD
-%%
+%% @doc: check if there is a managed connection
+%% @spec: () -> true | false
 is_connected() ->
     gen_server:call(?SERVER, is_connected).
 
-
 %% @doc: send a yate event and return immediatelly
-%% @spec: (YateEvent::yate_event()) -> ok
+%% @spec: (Data::binary()) -> ok
 send_binary_data(Data) ->
     gen_server:cast(?SERVER, {send_binary_data, Data}).
 
@@ -109,27 +106,15 @@ init([]) ->
     {ok, #state{}}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling call messages
-%%       
-%% <b>get_yate_connection</b>: get current active yate connection info
-%%
-%% <b>set_yate_connection</b>: set yate connection info
-%%
-%% 
-%% @spec: (Msg::Request, From, State) -> Reply
-%% where
-%%   Request = get_yate_connection | {set_yate_connection, YateConnection} 
-%%   YateConnection = {NodeName::atom(), Module::atom()}
-%%   YateEvent = yate_event()
-%%   WaitForFun = function()
-%%   Reply = {reply, CallReply, State} | {noreply, State, infinity}
-%%   CallReply = {ok, YateConnection} | ok 
+%% @see get_yate_connection/0
+%% @see is_connected/0
+%% @see set_yate_connection/2  
 handle_call(get_yate_connection, _From, State) ->
     Reply = {ok, State#state.yate_connection},
     {reply, Reply, State};
 handle_call(is_connected, _From, State) ->
     Reply = State#state.yate_connection =/= undefined,
     {reply, Reply, State};
-
 handle_call({set_yate_connection, YateConnection_ModuleName}, 
             _From, State) ->
     yaterl_logger:info_msg("yate_connection_mgr set_yate_connection local: ~w~n", 
@@ -150,19 +135,8 @@ handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_Module
     {reply, Reply, NewState}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling cast messages
-%%
-%% <b>send_binary_data</b>: send a yate event to the current active connection
-%% and return immediatelly
-%%      
-%% <b>received_binary_data</b>: receive forwarded binary data from the 
-%% active connection
-%%
-%% @spec: (Msg::Request, State) -> Reply
-%% where
-%%   Request = {send_binary_data, Data} | {received_binary_data, Data}
-%%   YateEvent = yate_event()
-%%   Data = binary()
-%%   Reply = {noreply, State}
+%% @see send_binary_data/1
+%% @see received_binary_data/1
 handle_cast({send_binary_data, Data}, State) ->
     yaterl_logger:info_msg("yate_connection_mgr SEND: ~s~n", [Data]),
     send_to_yate_connection(State#state.yate_connection, Data),

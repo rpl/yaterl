@@ -42,7 +42,7 @@
 -define(SERVER, ?MODULE).
 
 %% @type state() = tuple().
-%% ```#state{yate_port, yate_control}'''
+%% ```#state{yate_port, yate_connection_mgr}'''
 -record(state, {yate_port, yate_connection_mgr}).
 
 %%====================================================================
@@ -50,20 +50,19 @@
 %%====================================================================
 
 %% @doc: Starts the server
-%% @spec: (YaterlConfig::ConfigList) -> {ok,Pid} | ignore | {error,Error}
-%% where
-%%         ConfigList = [ConfigItem]
-%%         ConfigItem = { Key, Value }
+%% @spec: () -> {ok,Pid} | ignore | {error,Error}
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
-%% @doc: TBD
-%% 
+%% @doc: Check if this connection is registered to a connection manager
+%% @spec: () -> true | false
 is_managed() ->
     gen_server:call(?SERVER, is_managed).
 
-%% @doc: TBD
-%% 
+%% @doc: Return the current registered connection manager
+%% @spec: () -> Manager | undefined
+%% where
+%%    Manager = {remote, YateConnectionMgr_FullNodeName::string()} | local
 get_manager() ->
     gen_server:call(?SERVER, get_manager).
 
@@ -72,7 +71,7 @@ get_manager() ->
 send_binary_data(Data) ->
     gen_server:call(?SERVER, { send_binary_data, Data }).
 
-%% @doc: Received binary data to yate (routed to yate_control_srv)
+%% @doc: Received binary data to yate (routed to yate_connection_mgr)
 %% @spec: (Data::binary()) -> ok
 received_binary_data(Data) ->
     gen_server:cast(?SERVER, { received_binary_data, Data }).
@@ -92,14 +91,10 @@ init([]) ->
     {ok, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling call messages
-%%       
-%% <b>send_binary_data</b>: send binary data on the yate port
 %%
-%% @spec: (Msg::Request, From, State) -> Reply
-%% where
-%%   Request = {send_binary_data, Data}
-%%   Data = binary()
-%%   Reply = {reply, ok, State}
+%% @see send_binary_data/1
+%% @see is_managed/0
+%% @see get_manager/0
 handle_call({send_binary_data, Data}, _From, State) ->
     yaterl_logger:info_msg("SEND TO YATE ON STDIO: ~p~n", [Data]),
     io:fwrite(standard_error, "SENDING: ~s~n", [Data]),
@@ -112,14 +107,7 @@ handle_call(get_manager, _From, State) ->
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling cast messages
 %%       
-%% <b>receive_binary_data</b>: forward received binary data to the 
-%% connected control server
-%%
-%% @spec: (Msg::Request, State) -> Reply
-%% where
-%%   Request = {received_binary_data, Data}
-%%   Data = binary()
-%%   Reply = {noreply, State}
+%% @see received_binary_data/1
 handle_cast({received_binary_data, Data}, State) ->
     send_receive_data_to_yate_connection_mgr(State#state.yate_connection_mgr, Data),
     {noreply, State}.
