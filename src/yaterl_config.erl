@@ -16,20 +16,6 @@
          yate_custom_module_config/0,
          yate_custom_module_config/1,
 
-         %%% INTERNAL CONFIGS
-
-         yaterl_logger/0,
-         yaterl_logger/1,
-
-         yate_connection_mgr/0,
-         yate_connection_mgr/1,
-
-         yate_subscribe_mgr/0,
-         yate_subscribe_mgr/1,
-
-         yate_incoming_event_srv/0,
-         yate_incoming_event_srv/1,
-         
          yate_custom_module_name/0,
          yate_custom_module_name/1,
 
@@ -77,30 +63,6 @@ yaterl_sup_mode() ->
 
 yaterl_sup_mode(Mode) ->
     set_key(yaterl_sup_mode, Mode).
-
-yaterl_logger() ->
-    get_key(yate_connection_mgr, yaterl_logger).
-
-yaterl_logger(Value) ->
-    set_key(yate_connection_mgr, Value).
-
-yate_connection_mgr() ->
-    get_key(yate_connection_mgr, yate_connection_mgr).
-
-yate_connection_mgr(Value) ->
-    set_key(yate_connection_mgr, Value).
-
-yate_subscribe_mgr() ->
-    get_key(yate_subscribe_mgr, yate_subscribe_mgr).
-
-yate_subscribe_mgr(Value) ->
-    set_key(yate_subscribe_mgr, Value).
-
-yate_incoming_event_srv() ->
-    get_key(yate_incoming_event_srv, yate_incoming_event_srv).
-
-yate_incoming_event_srv(Value) ->
-    set_key(yate_incoming_event_srv, Value).
 
 yate_custom_module_config() ->
     get_key(yate_custom_module_config, {undefined, []}).

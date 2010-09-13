@@ -211,11 +211,9 @@ send_to_yate_connection({remote, YateConnection_NodeName,
              send_binary_data, [Data]).
 
 process_incoming_data(Data) ->
-    YateEventSrv = yaterl_config:yate_incoming_event_srv(),
-    {ok, Pid} = YateEventSrv:start(Data),
-    YateEventSrv:run(Pid).
+    {ok, Pid} = yate_incoming_event_srv:start(Data),
+    yate_incoming_event_srv:run(Pid).
     
 start_yate_message_subscribe_sequence() ->
-    YateSubscribeManager_ModuleName = yaterl_config:yate_subscribe_mgr(),
-    YateSubscribeManager_ModuleName:start_subscribe_sequence().
+    yate_subscribe_mgr:start_subscribe_sequence().
 

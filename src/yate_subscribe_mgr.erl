@@ -217,5 +217,4 @@ send_subscribe_request({MessageName, watch}) ->
 
 send_to_yate(YateEvent) ->
     yaterl_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
-    YateConnectionManager = yaterl_config:yate_connection_mgr(),
-    YateConnectionManager:send_binary_data(yate_encode:to_binary(YateEvent)).
+    yate_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).

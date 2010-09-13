@@ -23,9 +23,6 @@ suite() -> [{timetrap,{seconds,10}}].
 %% variable, but should NOT alter/remove any existing entries.
 %%--------------------------------------------------------------------
 init_per_suite(Config) ->
-    yaterl_config:yate_connection_mgr(yate_connection_mgr),
-    yaterl_config:yate_incoming_event_srv(yate_incoming_event_srv),
-    yaterl_config:yate_subscribe_mgr(yate_subscribe_mgr),
     Config.
 
 %%--------------------------------------------------------------------

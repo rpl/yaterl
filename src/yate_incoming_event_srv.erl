@@ -93,8 +93,7 @@ ack_yate_message_before_die(State) ->
         install -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
                                          [State#state.data]),
                    ReplyData = gen_yate_mod:ack_yate_message(YateEvent),
-                   YateConnectionMgr = yaterl_config:yate_connection_mgr(),
-                   YateConnectionMgr:send_binary_data(ReplyData);
+                   yate_connection_mgr:send_binary_data(ReplyData);
         _ -> ok
     end.
 
@@ -128,8 +127,7 @@ resolve_custom_module(YateEvent) ->
     {ModuleName, SubscribeType}.
 
 route_to_yate_subscribe_mgr(YateEvent) ->
-    YateSubscribeMgr = yaterl_config:yate_subscribe_mgr(),
-    YateSubscribeMgr:handle_yate_event(YateEvent).
+    yate_subscribe_mgr:handle_yate_event(YateEvent).
 
 route_to_custom_module(YateEvent, InstallModule, install) ->
     yaterl_logger:info_msg("call custom handler"),
@@ -142,8 +140,7 @@ route_to_custom_module(YateEvent, WatchModule, watch) ->
 
 route_to_install_module(YateEvent, InstallModule) ->
     ReplyData = InstallModule:handle_install_message(YateEvent),
-    YateConnectionMgr = yaterl_config:yate_connection_mgr(),
-    YateConnectionMgr:send_binary_data(ReplyData).
+    yate_connection_mgr:send_binary_data(ReplyData).
 
 route_to_watch_module(YateEvent, WatchModule) ->
     WatchModule:handle_watch_message(YateEvent).

@@ -24,9 +24,8 @@ behaviour_info(_Other) ->
 %%====================================================================
 
 send_yate_message(YateMessage) ->
-    YateConnMgr = yaterl_config:yate_connection_mgr(),
     Data = yate_encode:to_binary(YateMessage),
-    YateConnMgr:send_binary_data(Data).
+    yate_connection_mgr:send_binary_data(Data).
 
 reply_to_yate_message(YateMessage) ->
     Reply = yate_message:reply(YateMessage, true),
