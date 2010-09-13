@@ -35,8 +35,6 @@ end_per_suite(_Config) ->
     ok.
 
 all() -> [
-          % should support different log levels
-          yaterl_log_levels,
           % should load a gen_yate_mod application environment and 
           %   yate_subscribe_mgr should resolve 
           configure_gen_yate_mod,
@@ -50,54 +48,6 @@ all() -> [
           % should acknowledge install subscribed messages on processing errors
           acknowledge_on_processing_errors
          ].
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% SPEC-1: configurable log levels %%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-yaterl_log_levels(_Config) ->
-    % configure requested log_level
-    % register custom error_logger handler to catch logging events
-    %   log_level=disabled => 
-
-    DisabledLogLevel = disabled,
-    % start error_logger_forwarder test helper module
-    error_logger_forwarder:register(),
-    % configure initial log level
-    yaterl_config:log_level(DisabledLogLevel),
-    % start yaterl_logger
-    yaterl_logger:start_link(),
-
-    % configured log_level and initial yaterl_logger log_level 
-    % should be the same
-    DisabledLogLevel = yaterl_config:log_level(),
-    DisabledLogLevel = yaterl_logger:log_level(),
-
-    % call yaterl_logger
-    SendMsg = fun() ->
-                      yaterl_logger:info_msg("Info Test"),
-                      yaterl_logger:warning_msg("Warn Test"),
-                      yaterl_logger:error_msg("Error Test")
-              end,
-
-    test_log_level(disabled, SendMsg, []),
-
-    test_log_level(info, SendMsg, [
-                                   {info_msg, "Info Test", []},
-                                   {error, "Warn Test", []},
-                                   {error, "Error Test", []}
-                                  ]),
-
-    test_log_level(warning, SendMsg, [
-                                   {error, "Warn Test", []},
-                                   {error, "Error Test", []}
-                                  ]),
-    
-    test_log_level(error, SendMsg, [
-                                    {error, "Error Test", []}
-                                   ]),
-
-    ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-2: yate_subscribe_mgr should resolve gen_yate_mod handling %%%
@@ -292,29 +242,3 @@ assert_route_to_gen_yate_mod({CallbackType, MessageName}) ->
     after 500 ->
             ct:fail(expected_gen_yate_mod_callback_never_called)
     end.
-
-test_log_level(Level, SendEventsFun, ExpectedLoggerEvents) ->
-    yaterl_logger:log_level(Level),
-    Level = yaterl_logger:log_level(),
-    SendEventsFun(),    
-    expected_error_logger_events(ExpectedLoggerEvents).
-        
-
-expected_error_logger_events([]) ->
-    receive Any ->
-            ct:pal("Unexpected: ~p", [Any]),
-            ct:fail(unexpected_error_logger_events)
-    after 500 ->
-            ok
-    end;
-expected_error_logger_events({Level, Msg, DataList}) ->
-    receive {Level, _, { _, Msg, DataList}} ->
-            ok
-    after 500 ->
-            ct:fail(expected_logger_event_never_received)
-    end;
-expected_error_logger_events([H]) ->
-    expected_error_logger_events(H);
-expected_error_logger_events([H|T]) ->            
-    expected_error_logger_events(H),
-    expected_error_logger_events(T).
