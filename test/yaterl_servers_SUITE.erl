@@ -137,49 +137,47 @@ configure_gen_yate_mod(_Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
 message_subscribing_sequence(_Config) ->
-    yaterl_config:yate_custom_module_config(
-      {undefined, [{"call.execute", watch},
+    SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
-                   {"engine.status", install}]}
+                   {"engine.status", install}],
+    
+    yaterl_config:yate_custom_module_config(
+      {undefined, SubscribeConfigList}
      ),
     
     start_yaterl_servers(),
 
-    assert_yate_outgoing_data(<<"%%>watch:call.execute">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<watch:call.execute:true">>),
-    assert_yate_outgoing_data(<<"%%>install:80:call.route">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.route:true">>),
-    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
+    assert_subscribe_sequence(SubscribeConfigList),
 
     ok.
 
 
+assert_subscribe_sequence([]) ->
+    ok;
 assert_subscribe_sequence([H|T]) ->
-%% [{"call.execute", watch},
-%%  {"call.route", install, 80},
-%%  {"engine.status", install}]
-    
-
-
-    assert_yate_outgoing_data(<<"%%>install:80:call.route">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.route:true">>),
-    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
+    assert_subscribe_message(H),
+    assert_subscribe_sequence(T).
 
 assert_subscribe_message({Name, watch}) ->
     YateEvent = yate_event:new(watch, [{name, Name}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    BinReply = <<"%%<watch:", list_to_binary(Name)/binary, ":true">>,
+    Reply = io_lib:format("%%<watch:~p:true", [Name]),
+    BinReply = list_to_binary(Reply),
     yate_connection_forwarder:received_binary_data(BinReply),
     ok;
 assert_subscribe_message({Name, install, Priority}) ->
-    YateEvent = yate_event:new(watch, [{name, Name}]),
+    YateEvent = yate_event:new(install, [{name, Name},{priority, Priority}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    BinReply = <<"%%<watch:", list_to_binary(Name)/binary, ":true">>,
+    Reply = io_lib:format("%%<install:~p:~p:true", [Priority,Name]),
+    BinReply = list_to_binary(Reply),
     yate_connection_forwarder:received_binary_data(BinReply),
     ok;
 assert_subscribe_message({Name, install}) ->
+    YateEvent = yate_event:new(install, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<install::~p:true", [Name]),
+    BinReply = list_to_binary(Reply),
+    yate_connection_forwarder:received_binary_data(BinReply),
     ok.
 
 
@@ -192,19 +190,17 @@ message_routing(_Config) ->
     gen_yate_mod_forwarder:start_link(),
     gen_yate_mod_forwarder:register(),
 
-    yaterl_config:yate_custom_module_config(
-      {gen_yate_mod_forwarder, [{"call.execute", watch},
+    SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
-                   {"engine.status", install}]}
+                   {"engine.status", install}],
+
+    yaterl_config:yate_custom_module_config(
+      {gen_yate_mod_forwarder, SubscribeConfigList}
      ),
 
     start_yaterl_servers(),    
 
-    yate_connection_forwarder:received_binary_data(<<"%%<watch:call.execute:true">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.execute:true">>),
-    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
-    _ = test_server:messages_get(),
+    assert_subscribe_sequence(SubscribeConfigList),
 
     yate_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.execute:11">>),
     assert_route_to_gen_yate_mod({watch, "call.execute"}),
@@ -225,19 +221,17 @@ yate_decoding_errors(_Config) ->
     gen_yate_mod_forwarder:start_link(),
     gen_yate_mod_forwarder:register(),
 
-    yaterl_config:yate_custom_module_config(
-      {gen_yate_mod_forwarder, [{"call.execute", watch},
+    SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
-                   {"engine.status", install}]}
+                   {"engine.status", install}],
+
+    yaterl_config:yate_custom_module_config(
+      {gen_yate_mod_forwarder, SubscribeConfigList}
      ),
 
     start_yaterl_servers(),        
 
-    yate_connection_forwarder:received_binary_data(<<"%%<watch:call.execute:true">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.route:true">>),
-    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
-    _ = test_server:messages_get(),
+    assert_subscribe_sequence(SubscribeConfigList),
 
     yate_connection_forwarder:received_binary_data(<<"%%>messe:10:11:call.execute:11">>),
 
@@ -250,19 +244,17 @@ yate_decoding_errors(_Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 acknowledge_on_processing_errors(_Config) ->
-    yaterl_config:yate_custom_module_config(
-      {undefined, [{"call.execute", watch},
+    SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
-                   {"engine.status", install}]}
+                   {"engine.status", install}],
+
+    yaterl_config:yate_custom_module_config(
+      {undefined, SubscribeConfigList}
      ),
 
     start_yaterl_servers(),            
 
-    yate_connection_forwarder:received_binary_data(<<"%%<watch:call.execute:true">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.route:true">>),
-    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
-    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
-    _ = test_server:messages_get(),
+    assert_subscribe_sequence(SubscribeConfigList),
 
     Msg1 = <<"%%>message:10:11:call.route:11">>,
     AckMsg1 = yate_message:reply(yate_decode:from_binary(Msg1)),
