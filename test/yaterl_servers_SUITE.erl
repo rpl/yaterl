@@ -102,32 +102,6 @@ yaterl_log_levels(_Config) ->
 
     ok.
 
-test_log_level(Level, SendEventsFun, ExpectedLoggerEvents) ->
-    yaterl_logger:log_level(Level),
-    Level = yaterl_logger:log_level(),
-    SendEventsFun(),    
-    expected_error_logger_events(ExpectedLoggerEvents).
-        
-
-expected_error_logger_events([]) ->
-    receive Any ->
-            ct:pal("Unexpected: ~p", [Any]),
-            ct:fail(unexpected_error_logger_events)
-    after 500 ->
-            ok
-    end;
-expected_error_logger_events({Level, Msg, DataList}) ->
-    receive {Level, _, { _, Msg, DataList}} ->
-            ok
-    after 500 ->
-            ct:fail(expected_logger_event_never_received)
-    end;
-expected_error_logger_events([H]) ->
-    expected_error_logger_events(H);
-expected_error_logger_events([H|T]) ->            
-    expected_error_logger_events(H),
-    expected_error_logger_events(T).
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-2: yate_subscribe_mgr should resolve gen_yate_mod handling %%%
 %%%         as configured                                           %%%
@@ -180,24 +154,34 @@ message_subscribing_sequence(_Config) ->
 
     ok.
 
-start_yaterl_servers() ->
-    yaterl_logger:start_link(),
-    yate_subscribe_mgr:start_link(),
-    yate_connection_mgr:start_link(),
 
-    yate_connection_forwarder:start_link(),
-    yate_connection_forwarder:register(),
-    yate_connection_forwarder:connect_to(yate_connection_mgr).
+assert_subscribe_sequence([H|T]) ->
+%% [{"call.execute", watch},
+%%  {"call.route", install, 80},
+%%  {"engine.status", install}]
     
 
-assert_yate_outgoing_data(Data) ->
-    ct:pal("YATE OUTGOING DATA (Expect: ~p~n", [Data]),
-    receive Data ->
-            ok
-    after 500 ->
-            ct:pal("RECEIVED MESSAGES: ~p~n", [test_server:messages_get()]),
-            ct:fail(expected_data_never_received)
-    end.
+
+    assert_yate_outgoing_data(<<"%%>install:80:call.route">>),
+    yate_connection_forwarder:received_binary_data(<<"%%<install:80:call.route:true">>),
+    assert_yate_outgoing_data(<<"%%>install::engine.status">>),
+    yate_connection_forwarder:received_binary_data(<<"%%<install::engine.status:true">>),
+
+assert_subscribe_message({Name, watch}) ->
+    YateEvent = yate_event:new(watch, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    BinReply = <<"%%<watch:", list_to_binary(Name)/binary, ":true">>,
+    yate_connection_forwarder:received_binary_data(BinReply),
+    ok;
+assert_subscribe_message({Name, install, Priority}) ->
+    YateEvent = yate_event:new(watch, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    BinReply = <<"%%<watch:", list_to_binary(Name)/binary, ":true">>,
+    yate_connection_forwarder:received_binary_data(BinReply),
+    ok;
+assert_subscribe_message({Name, install}) ->
+    ok.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-4: should route subscribed message to gen_yate_mod callbacks %%%
@@ -233,16 +217,6 @@ message_routing(_Config) ->
 
     ok.
     
-assert_route_to_gen_yate_mod({CallbackType, MessageName}) ->
-    receive {CallbackType, YateMessage} ->
-            case yate_message:name(YateMessage) of
-                MessageName -> ok;
-                _ -> ct:fail(unexpected_yate_message)
-            end
-    after 500 ->
-            ct:fail(expected_gen_yate_mod_callback_never_called)
-    end.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-5: should survive error decoding messages                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -272,7 +246,7 @@ yate_decoding_errors(_Config) ->
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% SPEC-5: should acknowledge install subscribed messages on processing errors %%%
+%%% SPEC-6: should acknowledge install subscribed messages on processing errors %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 acknowledge_on_processing_errors(_Config) ->
@@ -296,3 +270,62 @@ acknowledge_on_processing_errors(_Config) ->
     yate_connection_forwarder:received_binary_data(Msg1),
     assert_yate_outgoing_data(yate_encode:to_binary(AckMsg1)),
     ok.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% TEST HELPERS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+start_yaterl_servers() ->
+    yaterl_logger:start_link(),
+    yate_subscribe_mgr:start_link(),
+    yate_connection_mgr:start_link(),
+
+    yate_connection_forwarder:start_link(),
+    yate_connection_forwarder:register(),
+    yate_connection_forwarder:connect_to(yate_connection_mgr).
+    
+
+assert_yate_outgoing_data(Data) ->
+    ct:pal("YATE OUTGOING DATA (Expect: ~p~n", [Data]),
+    receive Data ->
+            ok
+    after 500 ->
+            ct:pal("RECEIVED MESSAGES: ~p~n", [test_server:messages_get()]),
+            ct:fail(expected_data_never_received)
+    end.
+
+assert_route_to_gen_yate_mod({CallbackType, MessageName}) ->
+    receive {CallbackType, YateMessage} ->
+            case yate_message:name(YateMessage) of
+                MessageName -> ok;
+                _ -> ct:fail(unexpected_yate_message)
+            end
+    after 500 ->
+            ct:fail(expected_gen_yate_mod_callback_never_called)
+    end.
+
+test_log_level(Level, SendEventsFun, ExpectedLoggerEvents) ->
+    yaterl_logger:log_level(Level),
+    Level = yaterl_logger:log_level(),
+    SendEventsFun(),    
+    expected_error_logger_events(ExpectedLoggerEvents).
+        
+
+expected_error_logger_events([]) ->
+    receive Any ->
+            ct:pal("Unexpected: ~p", [Any]),
+            ct:fail(unexpected_error_logger_events)
+    after 500 ->
+            ok
+    end;
+expected_error_logger_events({Level, Msg, DataList}) ->
+    receive {Level, _, { _, Msg, DataList}} ->
+            ok
+    after 500 ->
+            ct:fail(expected_logger_event_never_received)
+    end;
+expected_error_logger_events([H]) ->
+    expected_error_logger_events(H);
+expected_error_logger_events([H|T]) ->            
+    expected_error_logger_events(H),
+    expected_error_logger_events(T).
