@@ -98,36 +98,6 @@ message_subscribing_sequence(_Config) ->
 
     ok.
 
-
-assert_subscribe_sequence([]) ->
-    ok;
-assert_subscribe_sequence([H|T]) ->
-    assert_subscribe_message(H),
-    assert_subscribe_sequence(T).
-
-assert_subscribe_message({Name, watch}) ->
-    YateEvent = yate_event:new(watch, [{name, Name}]),
-    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<watch:~p:true", [Name]),
-    BinReply = list_to_binary(Reply),
-    yate_connection_forwarder:received_binary_data(BinReply),
-    ok;
-assert_subscribe_message({Name, install, Priority}) ->
-    YateEvent = yate_event:new(install, [{name, Name},{priority, Priority}]),
-    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<install:~p:~p:true", [Priority,Name]),
-    BinReply = list_to_binary(Reply),
-    yate_connection_forwarder:received_binary_data(BinReply),
-    ok;
-assert_subscribe_message({Name, install}) ->
-    YateEvent = yate_event:new(install, [{name, Name}]),
-    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<install::~p:true", [Name]),
-    BinReply = list_to_binary(Reply),
-    yate_connection_forwarder:received_binary_data(BinReply),
-    ok.
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-4: should route subscribed message to gen_yate_mod callbacks %%%
 %%%         as configured                                             %%%
@@ -242,3 +212,31 @@ assert_route_to_gen_yate_mod({CallbackType, MessageName}) ->
     after 500 ->
             ct:fail(expected_gen_yate_mod_callback_never_called)
     end.
+
+assert_subscribe_sequence([]) ->
+    ok;
+assert_subscribe_sequence([H|T]) ->
+    assert_subscribe_message(H),
+    assert_subscribe_sequence(T).
+
+assert_subscribe_message({Name, watch}) ->
+    YateEvent = yate_event:new(watch, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<watch:~p:true", [Name]),
+    BinReply = list_to_binary(Reply),
+    yate_connection_forwarder:received_binary_data(BinReply),
+    ok;
+assert_subscribe_message({Name, install, Priority}) ->
+    YateEvent = yate_event:new(install, [{name, Name},{priority, Priority}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<install:~p:~p:true", [Priority,Name]),
+    BinReply = list_to_binary(Reply),
+    yate_connection_forwarder:received_binary_data(BinReply),
+    ok;
+assert_subscribe_message({Name, install}) ->
+    YateEvent = yate_event:new(install, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<install::~p:true", [Name]),
+    BinReply = list_to_binary(Reply),
+    yate_connection_forwarder:received_binary_data(BinReply),
+    ok.
