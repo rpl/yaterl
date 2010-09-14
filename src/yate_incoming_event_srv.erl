@@ -30,7 +30,6 @@
 %% API
 -export([
          start/1,
-         start_link/1,
          run/1
         ]).
 
