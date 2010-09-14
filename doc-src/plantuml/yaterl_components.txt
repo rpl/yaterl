@@ -3,32 +3,32 @@
 title YatERL Components Diagram
 
 package "Yate" {
-[yate_stdio_connection] - STDIO
+[yaterl_stdio_connection] - STDIO
 STDIO - [Yate]
-[yate_connection_sup] ..> [yate_stdio_connection]
+[yaterl_sup2] ..> [yaterl_stdio_connection]
 }
  
 package "YatERL" {
-[yate_connection_mgr] <<gen_server>>
-[yate_subscribe_mgr] <<gen_fsm>>
-[yate_incoming_event_srv] <<gen_server>>
-[CUSTOM MODULE] <<gen_yate_mod>>
+[yaterl_connection_mgr] <<gen_server>>
+[yaterl_subscribe_mgr] <<gen_fsm>>
+[yaterl_incoming_event_srv] <<gen_server>>
+[CUSTOM MODULE] <<yaterl_gen_mod>>
 
-[yaterl_sup] ..> [yate_connection_mgr]
-[yaterl_sup] ..> [yate_subscribe_mgr]
+[yaterl_sup] ..> [yaterl_connection_mgr]
+[yaterl_sup] ..> [yaterl_subscribe_mgr]
 
-[yate_stdio_connection] --> [yate_connection_mgr]: received_binary_data
-[yate_connection_mgr] --> [yate_stdio_connection]: send_binary_data
+[yaterl_stdio_connection] --> [yaterl_connection_mgr]: received_binary_data
+[yaterl_connection_mgr] --> [yaterl_stdio_connection]: send_binary_data
 
-[yate_connection_mgr] --> [yate_subscribe_mgr]: start_subscribe_sequence
-[yate_subscribe_mgr] --> [yate_connection_mgr]: send_binary_data
-[yate_connection_mgr] --> [yate_incoming_event_srv]: spawn and run
-[yate_incoming_event_srv] --> [yate_connection_mgr]: send_binary_data
-[yate_incoming_event_srv] --> [yate_subscribe_mgr]: handle_event / \nresolve_custom_module
+[yaterl_connection_mgr] --> [yaterl_subscribe_mgr]: start_subscribe_sequence
+[yaterl_subscribe_mgr] --> [yaterl_connection_mgr]: send_binary_data
+[yaterl_connection_mgr] --> [yaterl_incoming_event_srv]: spawn and run
+[yaterl_incoming_event_srv] --> [yaterl_connection_mgr]: send_binary_data
+[yaterl_incoming_event_srv] --> [yaterl_subscribe_mgr]: handle_event / \nresolve_custom_module
 
-[yate_incoming_event_srv] --> [CUSTOM MODULE]: handle_install_message /\n handle_watch_message
-[CUSTOM MODULE] --> [gen_yate_mod]: implements / send / reply / ack
-[gen_yate_mod] --> [yate_connection_mgr]: send_binary_data
+[yaterl_incoming_event_srv] --> [CUSTOM MODULE]: handle_install_message /\n handle_watch_message
+[CUSTOM MODULE] --> [yaterl_gen_mod]: implements / send / reply / ack
+[yaterl_gen_mod] --> [yaterl_connection_mgr]: send_binary_data
 } 
 
 @enduml
