@@ -1,10 +1,28 @@
-%%%-------------------------------------------------------------------
-%%% File    : yaterl_registering_mgr.erl
-%%% Author  : rpl <>
-%%% Description : 
-%%%
-%%% Created :  2 Sep 2010 by rpl <>
-%%%-------------------------------------------------------------------
+%% yate_stdio_connection: yate stdio connection server
+%%
+%% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
+%%
+%% Author: Luca Greco <luca.greco@alcacoop.it>
+%%
+%% This program is free software: you can redistribute it and/or modify
+%% it under the terms of the GNU Lesser General Public License as published by
+%% the Free Software Foundation, either version 3 of the License, or
+%% (at your option) any later version.
+%%
+%% This program is distributed in the hope that it will be useful,
+%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%% General Public License for more details.
+%%
+%% You should have received a copy of the GNU Lessel General Public License
+%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%% @author Luca Greco <luca.greco@alcacoop.it>
+%% @copyright 2009-2010 Alca Societa' Cooperativa
+
+%% @doc 'yate_subscribe_mgr' is a gen_fsm erlang process that 
+%%      manage yate message subscribing and resolve routing of
+%%      incoming subscribed yate messages.
 -module(yate_subscribe_mgr).
 
 -behaviour(gen_fsm).
@@ -30,52 +48,44 @@
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> ok,Pid} | ignore | {error,Error}
-%% Description:Creates a gen_fsm process which calls Module:init/1 to
-%% initialize. To ensure a synchronized start-up procedure, this function
-%% does not return until Module:init/1 has returned.  
-%%--------------------------------------------------------------------
+
+%% @doc: Starts the server
+%% @spec: () -> {ok,Pid} | ignore | {error,Error}
 start_link() ->
     gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
 
+%% @doc: Start the configured subscribe sequence on the active connection
+%% @spec: () -> ok
 start_subscribe_sequence() ->
     gen_fsm:send_event(?SERVER, start_subscribe_sequence).
 
+%% @doc: Handle an incoming yate subscribe event (watch, unwatch, install, uninstall)
+%%       during 'REGISTERING' state
+%% @spec: (YateEvent::yate_event()) -> ok
 handle_yate_event(YateEvent) ->
     gen_fsm:send_event(?SERVER, {handle_yate_event, YateEvent}).
 
+%% @doc: Resolve subscribed yate_message routing 
+%% @spec: (YateEvent::yate_event()) -> ResolvedPath
+%% where
+%%    ResolvedPath = InstallPath | InstallPriorityPath | WatchPath
+%%    InstallPath = {MessageName::string(), install}
+%%    InstallPriorityPath = {MessageName::string(), install, Priority::int()}
+%%    WatchPath = {MessageName::string(), watch}
 resolve_custom_module(YateEvent) ->
     gen_fsm:sync_send_all_state_event(?SERVER, {resolve_custom_module, YateEvent}).
-
 
 %%====================================================================
 %% gen_fsm callbacks
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, StateName, State} |
-%%                         {ok, StateName, State, Timeout} |
-%%                         ignore                              |
-%%                         {stop, StopReason}                   
-%% Description:Whenever a gen_fsm is started using gen_fsm:start/[3,4] or
-%% gen_fsm:start_link/3,4, this function is called by the new process to 
-%% initialize. 
-%%--------------------------------------------------------------------
+
+%% @doc: <b>[GEN_FSM CALLBACK]</b> Initiates the server
+%% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([]) ->
     {ok, 'STARTED', #state{subscribe_config=yaterl_config:yate_message_subscribe_configlist()}}.
 
-%%--------------------------------------------------------------------
-%% Function: 
-%% state_name(Event, State) -> {next_state, NextStateName, NextState}|
-%%                             {next_state, NextStateName, 
-%%                                NextState, Timeout} |
-%%                             {stop, Reason, NewState}
-%% Description:There should be one instance of this function for each possible
-%% state name. Whenever a gen_fsm receives an event sent using
-%% gen_fsm:send_event/2, the instance of this function with the same name as
-%% the current state name StateName is called to handle the event. It is also 
-%% called if a timeout occurs. 
-%%--------------------------------------------------------------------
+%% @doc <b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events
+%% @see start_subscribe_sequence/0
 'STARTED'(start_subscribe_sequence, State) ->
     yaterl_logger:info_msg("start_subscribe_sequence~n"),
     {NextState, NewStateData} = case start_request_queue(State) of
@@ -84,6 +94,8 @@ init([]) ->
                                 end,
     {next_state, NextState, NewStateData}.
 
+%% @doc <b>[GEN_FSM CALLBACK]</b> handle 'SUBSCRIBE' state events
+%% @see handle_yate_event/0
 'SUBSCRIBE'({handle_yate_event, _YateEvent}, State) ->
     {NextState, NewStateData} = case run_request_queue(State) of 
         {continue, StateData} -> {'SUBSCRIBE', StateData};
@@ -91,55 +103,8 @@ init([]) ->
     end,
     {next_state, NextState, NewStateData}.
 
-%%--------------------------------------------------------------------
-%% Function:
-%% state_name(Event, From, State) -> {next_state, NextStateName, NextState} |
-%%                                   {next_state, NextStateName, 
-%%                                     NextState, Timeout} |
-%%                                   {reply, Reply, NextStateName, NextState}|
-%%                                   {reply, Reply, NextStateName, 
-%%                                    NextState, Timeout} |
-%%                                   {stop, Reason, NewState}|
-%%                                   {stop, Reason, Reply, NewState}
-%% Description: There should be one instance of this function for each
-%% possible state name. Whenever a gen_fsm receives an event sent using
-%% gen_fsm:sync_send_event/2,3, the instance of this function with the same
-%% name as the current state name StateName is called to handle the event.
-%%--------------------------------------------------------------------
-
-%%--------------------------------------------------------------------
-%% Function: 
-%% handle_event(Event, StateName, State) -> {next_state, NextStateName, 
-%%						  NextState} |
-%%                                          {next_state, NextStateName, 
-%%					          NextState, Timeout} |
-%%                                          {stop, Reason, NewState}
-%% Description: Whenever a gen_fsm receives an event sent using
-%% gen_fsm:send_all_state_event/2, this function is called to handle
-%% the event.
-%%--------------------------------------------------------------------
-%%handle_event(_Event, StateName, State) ->
-%%    {next_state, StateName, State}.
-
-%%--------------------------------------------------------------------
-%% Function: 
-%% handle_sync_event(Event, From, StateName, 
-%%                   State) -> {next_state, NextStateName, NextState} |
-%%                             {next_state, NextStateName, NextState, 
-%%                              Timeout} |
-%%                             {reply, Reply, NextStateName, NextState}|
-%%                             {reply, Reply, NextStateName, NextState, 
-%%                              Timeout} |
-%%                             {stop, Reason, NewState} |
-%%                             {stop, Reason, Reply, NewState}
-%% Description: Whenever a gen_fsm receives an event sent using
-%% gen_fsm:sync_send_all_state_event/2,3, this function is called to handle
-%% the event.
-%%--------------------------------------------------------------------
-%%handle_sync_event(Event, From, StateName, State) ->
-%%    Reply = ok,
-%%    {reply, Reply, StateName, State}.
-
+%% @doc <b>[GEN_FSM CALLBACK]</b> handle sync event on any state
+%% @see resolve_custom_module/1
 handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateData) ->
     SubscribeConfig = StateData#state.subscribe_config,
     Reply = case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
@@ -150,34 +115,17 @@ handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateDat
     end,
     {reply, Reply, StateName, StateData}.
 
-%%--------------------------------------------------------------------
-%% Function: 
-%% handle_info(Info,StateName,State)-> {next_state, NextStateName, NextState}|
-%%                                     {next_state, NextStateName, NextState, 
-%%                                       Timeout} |
-%%                                     {stop, Reason, NewState}
-%% Description: This function is called by a gen_fsm when it receives any
-%% other message than a synchronous or asynchronous event
-%% (or a system message).
-%%--------------------------------------------------------------------
-%%handle_info(_Info, StateName, State) ->
-%%    {next_state, StateName, State}.
-
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, StateName, State) -> void()
-%% Description:This function is called by a gen_fsm when it is about
-%% to terminate. It should be the opposite of Module:init/1 and do any
-%% necessary cleaning up. When it returns, the gen_fsm terminates with
-%% Reason. The return value is ignored.
-%%--------------------------------------------------------------------
+%% @doc: <b>[GEN_FSM CALLBACK]</b> Handling terminate sequence. 
+%% It should be the opposite of Module:init/1 and do any necessary
+%% cleaning up. When it returns, the gen_server terminates with Reason.
+%% The return value is ignored.
+%% 
+%% @spec: (_Reason, _StateName, _State) -> ok
 terminate(_Reason, _StateName, _State) ->
     ok.
 
-%%--------------------------------------------------------------------
-%% Function:
-%% code_change(OldVsn, StateName, State, Extra) -> {ok, StateName, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
+%% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
+%% @spec: (OldVsn, StateName, State, Extra) -> {ok, NewState}
 code_change(_OldVsn, StateName, State, _Extra) ->
     {ok, StateName, State}.
 

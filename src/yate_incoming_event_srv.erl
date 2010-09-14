@@ -1,10 +1,28 @@
-%%%-------------------------------------------------------------------
-%%% File    : yate_incoming_event_srv.erl
-%%% Author  : rpl <>
-%%% Description : 
-%%%
-%%% Created :  3 Sep 2010 by rpl <>
-%%%-------------------------------------------------------------------
+%% yate_stdio_connection: yate stdio connection server
+%%
+%% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
+%%
+%% Author: Luca Greco <luca.greco@alcacoop.it>
+%%
+%% This program is free software: you can redistribute it and/or modify
+%% it under the terms of the GNU Lesser General Public License as published by
+%% the Free Software Foundation, either version 3 of the License, or
+%% (at your option) any later version.
+%%
+%% This program is distributed in the hope that it will be useful,
+%% but WITHOUT ANY WARRANTY; without even the implied warranty of
+%% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+%% General Public License for more details.
+%%
+%% You should have received a copy of the GNU Lessel General Public License
+%% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+%% @author Luca Greco <luca.greco@alcacoop.it>
+%% @copyright 2009-2010 Alca Societa' Cooperativa
+
+%% @doc 'yate_incoming_event_srv' is a gen_server erlang process that 
+%%      will be spawned internally by yate_connection_mgr to process
+%%      incoming data.
 -module(yate_incoming_event_srv).
 
 -behaviour(gen_server).
@@ -26,16 +44,14 @@
 %%====================================================================
 %% API
 %%====================================================================
-%%--------------------------------------------------------------------
-%% Function: start_link() -> {ok,Pid} | ignore | {error,Error}
-%% Description: Starts the server
-%%--------------------------------------------------------------------
+
+%% @doc: Starts the server
+%% @spec: (Data::binary()) -> {ok,Pid} | ignore | {error,Error}
 start(Data) ->
     gen_server:start(?MODULE, [Data], []).
 
-start_link(Data) ->
-    gen_server:start_link(?MODULE, [Data], []).
-
+%% @doc: Run yate event processing
+%% @spec: (Pid::pid()) -> ok
 run(Pid) ->
     gen_server:cast(Pid, run).
 
@@ -43,29 +59,26 @@ run(Pid) ->
 %% gen_server callbacks
 %%====================================================================
 
-%%--------------------------------------------------------------------
-%% Function: init(Args) -> {ok, State} |
-%%                         {ok, State, Timeout} |
-%%                         ignore               |
-%%                         {stop, Reason}
-%% Description: Initiates the server
-%%--------------------------------------------------------------------
+%% @doc: <b>[GEN_SERVER CALLBACK]</b> Initiates the server
+%% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([Data]) ->
     {ok, #state{data=Data}}.
 
+%% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling cast messages
+%%       
+%% @see run/0
 handle_cast(run, State) ->
     Data = State#state.data,
     YateEvent = yate_decode:from_binary(Data),
     processing_yate_event(YateEvent),
     {stop, normal, State}.
 
-%%--------------------------------------------------------------------
-%% Function: terminate(Reason, State) -> void()
-%% Description: This function is called by a gen_server when it is about to
-%% terminate. It should be the opposite of Module:init/1 and do any necessary
+%% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling terminate sequence. 
+%% It should be the opposite of Module:init/1 and do any necessary
 %% cleaning up. When it returns, the gen_server terminates with Reason.
 %% The return value is ignored.
-%%--------------------------------------------------------------------
+%% 
+%% @spec: (_Reason, _State) -> ok
 terminate(Reason, State) ->
     case Reason of
         normal -> ok;
@@ -73,10 +86,8 @@ terminate(Reason, State) ->
              ok
     end.
 
-%%--------------------------------------------------------------------
-%% Func: code_change(OldVsn, State, Extra) -> {ok, NewState}
-%% Description: Convert process state when code is changed
-%%--------------------------------------------------------------------
+%% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
+%% @spec: (OldVsn, State, Extra) -> {ok, NewState}
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 

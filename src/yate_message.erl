@@ -176,10 +176,15 @@ set_processed(true, Message) ->
 set_processed(false, Message) ->
     yate_event:change_event_attribute(processed, "false", Message).
 
+%% @doc: Create an answer yate event from a given yate event, setting processing false
+%% @spec: (Message::yate_event()) -> NewYateMessage::yate_event()
 reply(Message) ->
     Msg1 = Message#yate_event{direction=answer},
     set_processed(false, Msg1).
 
+%% @doc: Create an answer yate event from a given yate event, setting processing to 
+%%       Processed parameter value
+%% @spec: (Message::yate_event(), Processed::bool()) -> NewYateMessage::yate_event()
 reply(Message, Processed) ->
     Msg1 = Message#yate_event{direction=answer},
     set_processed(Processed, Msg1).
