@@ -1,0 +1,10 @@
+@startuml ../../doc/img/yaterl_subscribe_mgr_fsm.png
+
+[*] -> STARTED
+STARTED --> SUBSCRIBE: start_subscribe_sequence
+SUBSCRIBE --> SUBSCRIBE: handle_yate_event
+SUBSCRIBE --> COMPLETED: handle_yate_event 
+
+note left of COMPLETED: if subscribe_queue is empty
+
+@enduml
