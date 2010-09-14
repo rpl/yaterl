@@ -1,4 +1,4 @@
--module(yate_connection_forwarder).
+-module(yaterl_connection_forwarder).
 
 -behaviour(gen_server).
 

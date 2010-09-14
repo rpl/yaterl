@@ -1,4 +1,4 @@
--module(gen_yate_mod).
+-module(gen_yaterl_mod).
 
 -export([
          behaviour_info/1,
@@ -25,7 +25,7 @@ behaviour_info(_Other) ->
 
 send_yate_message(YateMessage) ->
     Data = yate_encode:to_binary(YateMessage),
-    yate_connection_mgr:send_binary_data(Data).
+    yaterl_connection_mgr:send_binary_data(Data).
 
 reply_to_yate_message(YateMessage) ->
     Reply = yate_message:reply(YateMessage, true),

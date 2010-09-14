@@ -27,23 +27,23 @@
          log_level/0,
          log_level/1,
 
-         whereis_yate_connection_mgr/0,
-         whereis_yate_connection_mgr/1,
+         whereis_yaterl_connection_mgr/0,
+         whereis_yaterl_connection_mgr/1,
 
-         yate_connection_maxbytesline/0,
-         yate_connection_maxbytesline/1,
+         yaterl_connection_maxbytesline/0,
+         yaterl_connection_maxbytesline/1,
 
          yaterl_sup_mode/0,
          yaterl_sup_mode/1,
 
-         yate_custom_module_config/0,
-         yate_custom_module_config/1,
+         yaterl_custom_module_config/0,
+         yaterl_custom_module_config/1,
 
-         yate_custom_module_name/0,
-         yate_custom_module_name/1,
+         yaterl_custom_module_name/0,
+         yaterl_custom_module_name/1,
 
-         yate_message_subscribe_configlist/0,
-         yate_message_subscribe_configlist/1
+         yaterl_message_subscribe_configlist/0,
+         yaterl_message_subscribe_configlist/1
         ]).
 
 %% @doc: Get the current log_level (defaults to error)
@@ -58,12 +58,12 @@ log_level() ->
 log_level(Value) ->
     set_key(log_level, Value).
 
-%% @doc: Get the yate_connection_mgr location
-%% @spec: () -> YateConnectionMgr_Location
+%% @doc: Get the yaterl_connection_mgr location
+%% @spec: () -> ConnectionMgr_Location
 %% where
-%%   YateConnectionMgr_Location = {NodeName::string(), HostName::string()}
-whereis_yate_connection_mgr() ->
-    {NodeName, HostName} = get_key(whereis_yate_connection_mgr, {self, localhost}),
+%%   ConnectionMgr_Location = {NodeName::string(), HostName::string()}
+whereis_yaterl_connection_mgr() ->
+    {NodeName, HostName} = get_key(whereis_yaterl_connection_mgr, {self, localhost}),
     RealNodeName = case {NodeName,
                          is_list(NodeName)} of
                        {self, false} -> [H | _T ] = string:tokens(
@@ -79,24 +79,24 @@ whereis_yate_connection_mgr() ->
                    end,
     {RealNodeName, RealHostName}.
 
-%% @doc: Set the yate_connection_mgr location
+%% @doc: Set the yaterl_connection_mgr location
 %% @spec: (Value) -> ok
 %% where
 %%   Value = {NodeName::string(), HostName::string()} | {self, localhost} | undefined
-whereis_yate_connection_mgr(Value) ->
-    set_key(whereis_yate_connection_mgr, Value).
+whereis_yaterl_connection_mgr(Value) ->
+    set_key(whereis_yaterl_connection_mgr, Value).
 
 %% @doc: Get the current maxbytesline value (defaults to 80000)
 %% @spec: () -> Value::integer()
-yate_connection_maxbytesline() ->
-    get_key(yate_connection_maxbytesline, 80000).
+yaterl_connection_maxbytesline() ->
+    get_key(yaterl_connection_maxbytesline, 80000).
 
 %% @doc: Set the current maxbytesline value 
 %% @spec: (Value) -> ok
 %% where
 %%   Value = integer() | undefined
-yate_connection_maxbytesline(Value) ->
-    set_key(yate_connection_maxbytesline, Value).
+yaterl_connection_maxbytesline(Value) ->
+    set_key(yaterl_connection_maxbytesline, Value).
 
 %% @doc: Get the current yaterl_sup_mode (defaults to all_in_one)
 %% @spec: () -> all_in_one | manager_only | stdio_connection_only
@@ -117,8 +117,8 @@ yaterl_sup_mode(Mode) ->
 %%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
 %%   MessageName = string()
 %%   Priority = integer()
-yate_custom_module_config() ->
-    get_key(yate_custom_module_config, {undefined, []}).
+yaterl_custom_module_config() ->
+    get_key(yaterl_custom_module_config, {undefined, []}).
 
 %% @doc: Set the current custom module config 
 %% @spec: (Value) -> ok
@@ -128,21 +128,21 @@ yate_custom_module_config() ->
 %%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
 %%   MessageName = string()
 %%   Priority = integer()
-yate_custom_module_config(Value) ->
-    set_key(yate_custom_module_config, Value).
+yaterl_custom_module_config(Value) ->
+    set_key(yaterl_custom_module_config, Value).
 
 
 %% @doc: Get the current custom module name
 %% @spec: () -> ModuleName::string()
-yate_custom_module_name() ->
-    {CustomModuleName, _ConfigList} = yate_custom_module_config(),
+yaterl_custom_module_name() ->
+    {CustomModuleName, _ConfigList} = yaterl_custom_module_config(),
     CustomModuleName.
 
 %% @doc: Set the current custom module name
 %% @spec: (Value::string()) -> ok
-yate_custom_module_name(Value) ->
-    {_CustomModuleName, ConfigList} = yate_custom_module_config(),
-    yate_custom_module_config({Value, ConfigList}).
+yaterl_custom_module_name(Value) ->
+    {_CustomModuleName, ConfigList} = yaterl_custom_module_config(),
+    yaterl_custom_module_config({Value, ConfigList}).
 
 %% @doc: Get the current message subscribe list
 %% @spec: () -> SubscribeList
@@ -151,8 +151,8 @@ yate_custom_module_name(Value) ->
 %%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
 %%   MessageName = string()
 %%   Priority = integer()
-yate_message_subscribe_configlist() ->
-    {_CustomModuleName, ConfigList} = yate_custom_module_config(),
+yaterl_message_subscribe_configlist() ->
+    {_CustomModuleName, ConfigList} = yaterl_custom_module_config(),
     ConfigList.
 
 %% @doc: Set the current message subscribe list
@@ -162,9 +162,9 @@ yate_message_subscribe_configlist() ->
 %%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
 %%   MessageName = string()
 %%   Priority = integer()
-yate_message_subscribe_configlist(Value) ->
-    {CustomModuleName, _ConfigList} = yate_custom_module_config(),
-    yate_custom_module_config({CustomModuleName, Value}).
+yaterl_message_subscribe_configlist(Value) ->
+    {CustomModuleName, _ConfigList} = yaterl_custom_module_config(),
+    yaterl_custom_module_config({CustomModuleName, Value}).
 
 %%--------------------------------------------------------------------
 %%% Internal functions

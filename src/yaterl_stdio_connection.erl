@@ -1,4 +1,4 @@
-%% yate_stdio_connection: yate stdio connection server
+%% yaterl_stdio_connection: yaterl stdio connection server
 %%
 %% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
 %%
@@ -22,7 +22,7 @@
 
 %% @doc '{@module}' is a gen_server erlang process that 
 %%      open and manage a stdio connection to YATE VOIP server.
--module(yate_stdio_connection).
+-module(yaterl_stdio_connection).
 
 -behaviour(gen_server).
 
@@ -42,8 +42,8 @@
 -define(SERVER, ?MODULE).
 
 %% @type state() = tuple().
-%% ```#state{yate_port, yate_connection_mgr}'''
--record(state, {yate_port, yate_connection_mgr}).
+%% ```#state{yate_port, yaterl_connection_mgr}'''
+-record(state, {yate_port, yaterl_connection_mgr}).
 
 %%====================================================================
 %% API
@@ -71,7 +71,7 @@ get_manager() ->
 send_binary_data(Data) ->
     gen_server:call(?SERVER, { send_binary_data, Data }).
 
-%% @doc: Received binary data to yate (routed to yate_connection_mgr)
+%% @doc: Received binary data to yate (routed to yaterl_connection_mgr)
 %% @spec: (Data::binary()) -> ok
 received_binary_data(Data) ->
     gen_server:cast(?SERVER, { received_binary_data, Data }).
@@ -85,9 +85,9 @@ received_binary_data(Data) ->
 init([]) ->
     {YateConnectionMgr_NodeName, YateConnectionMgr_HostName, MaxBytesLine} = load_config_from_env(),
     Port = open_yate_port(MaxBytesLine),
-    YateConnectionMgr = register_to_yate_connection_mgr(YateConnectionMgr_NodeName, 
+    YateConnectionMgr = register_to_yaterl_connection_mgr(YateConnectionMgr_NodeName, 
                                                YateConnectionMgr_HostName),
-    State = #state{yate_port=Port, yate_connection_mgr=YateConnectionMgr},
+    State = #state{yate_port=Port, yaterl_connection_mgr=YateConnectionMgr},
     {ok, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling call messages
@@ -101,15 +101,15 @@ handle_call({send_binary_data, Data}, _From, State) ->
     true = port_command(State#state.yate_port, <<Data/binary, "\n">>),
     {reply, ok, State};
 handle_call(is_managed, _From, State) ->
-    {reply, State#state.yate_connection_mgr =/= undefined, State};
+    {reply, State#state.yaterl_connection_mgr =/= undefined, State};
 handle_call(get_manager, _From, State) ->
-    {reply, {ok, State#state.yate_connection_mgr}, State}.
+    {reply, {ok, State#state.yaterl_connection_mgr}, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling cast messages
 %%       
 %% @see received_binary_data/1
 handle_cast({received_binary_data, Data}, State) ->
-    send_receive_data_to_yate_connection_mgr(State#state.yate_connection_mgr, Data),
+    send_receive_data_to_yaterl_connection_mgr(State#state.yaterl_connection_mgr, Data),
     {noreply, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling all non call/cast messages
@@ -163,39 +163,39 @@ code_change(_OldVsn, State, _Extra) ->
 
 load_config_from_env() ->
     {YateConnectionMgr_NodeName, 
-     YateConnectionMgr_HostName} = yaterl_config:whereis_yate_connection_mgr(),
-    MaxBytesLine = yaterl_config:yate_connection_maxbytesline(),
+     YateConnectionMgr_HostName} = yaterl_config:whereis_yaterl_connection_mgr(),
+    MaxBytesLine = yaterl_config:yaterl_connection_maxbytesline(),
     {YateConnectionMgr_NodeName, YateConnectionMgr_HostName, MaxBytesLine}.
 
 open_yate_port(MaxBytesLine) ->
     % Open a port on stdin/stdout to talk with yate
     _Port = open_port({fd, 0, 1}, [stream,binary,{line, MaxBytesLine},eof]).
 
-send_receive_data_to_yate_connection_mgr(local, Data) ->
-    yate_connection_mgr:received_binary_data(Data);
-send_receive_data_to_yate_connection_mgr({remote, FullNodeName}, Data) ->
-    rpc:cast(FullNodeName, yate_connection_mgr, received_binary_data, [Data]).  
+send_receive_data_to_yaterl_connection_mgr(local, Data) ->
+    yaterl_connection_mgr:received_binary_data(Data);
+send_receive_data_to_yaterl_connection_mgr({remote, FullNodeName}, Data) ->
+    rpc:cast(FullNodeName, yaterl_connection_mgr, received_binary_data, [Data]).  
 
 %%% All-in-one configuration
-register_to_yate_connection_mgr(self, localhost) ->
-    % Return a local yate_connection_mgr descriptor
-    ok = yate_connection_mgr:set_yate_connection(local, ?MODULE),
+register_to_yaterl_connection_mgr(self, localhost) ->
+    % Return a local yaterl_connection_mgr descriptor
+    ok = yaterl_connection_mgr:set_yate_connection(local, ?MODULE),
     local;
 %%% Remote Yate Event Manager configuration
-register_to_yate_connection_mgr(YateConnectionMgr_NodeName, YateConnectionMgr_HostName) ->
+register_to_yaterl_connection_mgr(YateConnectionMgr_NodeName, YateConnectionMgr_HostName) ->
     YateConnectionMgr_FullNodeName = list_to_atom(string:join([YateConnectionMgr_NodeName, 
                                                   YateConnectionMgr_HostName], "@")),
-    % Ping yate_control node
+    % Ping yaterl_connection_mgr node
     case net_adm:ping(YateConnectionMgr_FullNodeName) of
         pong -> ok;
         pang -> yaterl_logger:error_msg("ERROR: Yate Event Manager node '~s' is down~n", 
                                        [YateConnectionMgr_FullNodeName]),
-                exit(yate_connection_mgr_nodedown)            
+                exit(yaterl_connection_mgr_nodedown)            
     end,
-    % Register to yate_control_srv nodedown events
+    % Register to yaterl_connection_mgr nodedown events
     erlang:monitor_node(YateConnectionMgr_FullNodeName, true),
-    rpc:call(YateConnectionMgr_FullNodeName, yate_connection_mgr, 
+    rpc:call(YateConnectionMgr_FullNodeName, yaterl_connection_mgr, 
              set_yate_connection, [{remote, node()}, ?MODULE]),
-    % Return a remote yate_connection_mgr descriptor
+    % Return a remote yaterl_connection_mgr descriptor
     {remote, YateConnectionMgr_FullNodeName}.
 

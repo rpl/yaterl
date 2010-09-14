@@ -1,4 +1,4 @@
-%% yate_stdio_connection: yate stdio connection server
+%% yaterl_logger: yaterl logger filter and forward
 %%
 %% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
 %%

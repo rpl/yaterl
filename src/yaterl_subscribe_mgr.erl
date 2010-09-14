@@ -1,4 +1,4 @@
-%% yate_stdio_connection: yate stdio connection server
+%% yaterl_subscribe_mgr: yaterl subscribe manager
 %%
 %% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
 %%
@@ -21,9 +21,15 @@
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
 %% @doc '{@module}' is a gen_fsm erlang process that 
-%%      manage yate message subscribing and resolve routing of
-%%      incoming subscribed yate messages.
--module(yate_subscribe_mgr).
+%%      manage yate message subscribe sequence and 
+%%      resolve routing of incoming subscribed yate messages.
+%%
+%%  == UML State Machine Diagram ==
+%%
+%%      <img src="img/yaterl_subscribe_mgr_fsm.png" alt="Yaterl subscribe manager FSM"
+%%           title="Yaterl subscribe manager FSM"/>
+
+-module(yaterl_subscribe_mgr).
 
 -behaviour(gen_fsm).
 
@@ -82,7 +88,7 @@ resolve_custom_module(YateEvent) ->
 %% @doc: <b>[GEN_FSM CALLBACK]</b> Initiates the server
 %% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([]) ->
-    {ok, 'STARTED', #state{subscribe_config=yaterl_config:yate_message_subscribe_configlist()}}.
+    {ok, 'STARTED', #state{subscribe_config=yaterl_config:yaterl_message_subscribe_configlist()}}.
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events
 %% @see start_subscribe_sequence/0
@@ -165,4 +171,4 @@ send_subscribe_request({MessageName, watch}) ->
 
 send_to_yate(YateEvent) ->
     yaterl_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
-    yate_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).
+    yaterl_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).

@@ -1,4 +1,4 @@
-%% yate_stdio_connection: yate stdio connection server
+%% yaterl_stdio_connection: yaterl stdio connection server
 %%
 %% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
 %%
@@ -23,7 +23,7 @@
 %% @doc '{@module}' is a gen_server erlang process that 
 %%      will be spawned internally by yate_connection_mgr to process
 %%      incoming data.
--module(yate_incoming_event_srv).
+-module(yaterl_incoming_event_srv).
 
 -behaviour(gen_server).
 
@@ -102,8 +102,8 @@ ack_yate_message_before_die(State) ->
     case SubscribeType of
         install -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
                                          [State#state.data]),
-                   ReplyData = gen_yate_mod:ack_yate_message(YateEvent),
-                   yate_connection_mgr:send_binary_data(ReplyData);
+                   ReplyData = gen_yaterl_mod:ack_yate_message(YateEvent),
+                   yaterl_connection_mgr:send_binary_data(ReplyData);
         _ -> ok
     end.
 
@@ -113,13 +113,13 @@ processing_yate_event(YateEvent) ->
 
 %% TODO: processing set_local and error events
 processing_by_type(watch, YateEvent) ->
-    route_to_yate_subscribe_mgr(YateEvent);
+    route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(install, YateEvent) ->
-    route_to_yate_subscribe_mgr(YateEvent);
+    route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(unwatch, YateEvent) ->
-    route_to_yate_subscribe_mgr(YateEvent);
+    route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(uninstall, YateEvent) ->
-    route_to_yate_subscribe_mgr(YateEvent);
+    route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(error, YateEvent) ->
     yaterl_logger:error_msg("RECEIVED YATE ERROR: ~p~n", [YateEvent]);
 processing_by_type(message, YateEvent) ->
@@ -132,12 +132,12 @@ processing_by_type(message, YateEvent) ->
     end.
 
 resolve_custom_module(YateEvent) ->
-    ModuleName = yaterl_config:yate_custom_module_name(),
-    SubscribeType = yate_subscribe_mgr:resolve_custom_module(YateEvent),
+    ModuleName = yaterl_config:yaterl_custom_module_name(),
+    SubscribeType = yaterl_subscribe_mgr:resolve_custom_module(YateEvent),
     {ModuleName, SubscribeType}.
 
-route_to_yate_subscribe_mgr(YateEvent) ->
-    yate_subscribe_mgr:handle_yate_event(YateEvent).
+route_to_yaterl_subscribe_mgr(YateEvent) ->
+    yaterl_subscribe_mgr:handle_yate_event(YateEvent).
 
 route_to_custom_module(YateEvent, InstallModule, install) ->
     yaterl_logger:info_msg("call custom handler"),
@@ -150,7 +150,7 @@ route_to_custom_module(YateEvent, WatchModule, watch) ->
 
 route_to_install_module(YateEvent, InstallModule) ->
     ReplyData = InstallModule:handle_install_message(YateEvent),
-    yate_connection_mgr:send_binary_data(ReplyData).
+    yaterl_connection_mgr:send_binary_data(ReplyData).
 
 route_to_watch_module(YateEvent, WatchModule) ->
     WatchModule:handle_watch_message(YateEvent).

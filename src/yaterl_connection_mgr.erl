@@ -1,4 +1,4 @@
-%% yate_connection_mgr: yate connection manager
+%% yaterl_connection_mgr: yaterl connection manager
 %%
 %% Copyright (C) 2009-2010 - Alca Società Cooperativa <info@alcacoop.it>
 %%
@@ -22,7 +22,7 @@
 
 %% @doc '{@module}' is a gen_srv erlang process that coordinate
 %%      application access to yate connections
--module(yate_connection_mgr).
+-module(yaterl_connection_mgr).
 
 -behaviour(gen_server).
 
@@ -185,9 +185,9 @@ send_to_yate_connection({remote, YateConnection_NodeName,
              send_binary_data, [Data]).
 
 process_incoming_data(Data) ->
-    {ok, Pid} = yate_incoming_event_srv:start(Data),
-    yate_incoming_event_srv:run(Pid).
+    {ok, Pid} = yaterl_incoming_event_srv:start(Data),
+    yaterl_incoming_event_srv:run(Pid).
     
 start_yate_message_subscribe_sequence() ->
-    yate_subscribe_mgr:start_subscribe_sequence().
+    yaterl_subscribe_mgr:start_subscribe_sequence().
 
