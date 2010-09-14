@@ -1,4 +1,4 @@
--module(gen_yaterl_mod).
+-module(yaterl_gen_mod).
 
 -export([
          behaviour_info/1,

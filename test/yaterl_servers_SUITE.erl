@@ -37,7 +37,7 @@ end_per_suite(_Config) ->
 all() -> [
           % should load a gen_yate_mod application environment and 
           %   yate_subscribe_mgr should resolve 
-          configure_gen_yaterl_mod,
+          configure_yaterl_gen_mod,
           % should start subscribing sequence on new connection available
           %   and configured
           message_subscribing_sequence,
@@ -50,11 +50,11 @@ all() -> [
          ].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% SPEC-2: yaterl_subscribe_mgr should resolve gen_yaterl_mod handling %%%
+%%% SPEC-2: yaterl_subscribe_mgr should resolve yaterl_gen_mod handling %%%
 %%%         as configured                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-configure_gen_yaterl_mod(_Config) ->
+configure_yaterl_gen_mod(_Config) ->
     yaterl_config:yaterl_custom_module_config(
        {undefined, [{"call.execute", watch},
                     {"call.route", install, 80},
@@ -104,15 +104,15 @@ message_subscribing_sequence(_Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
 message_routing(_Config) ->
-    gen_yaterl_mod_forwarder:start_link(),
-    gen_yaterl_mod_forwarder:register(),
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
 
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
                    {"engine.status", install}],
 
     yaterl_config:yaterl_custom_module_config(
-      {gen_yaterl_mod_forwarder, SubscribeConfigList}
+      {yaterl_gen_mod_forwarder, SubscribeConfigList}
      ),
 
     start_yaterl_servers(),    
@@ -120,13 +120,13 @@ message_routing(_Config) ->
     assert_subscribe_sequence(SubscribeConfigList),
 
     yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.execute:11">>),
-    assert_route_to_gen_yaterl_mod({watch, "call.execute"}),
+    assert_route_to_yaterl_gen_mod({watch, "call.execute"}),
     
     yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.route:11">>),
-    assert_route_to_gen_yaterl_mod({install, "call.route"}),
+    assert_route_to_yaterl_gen_mod({install, "call.route"}),
 
     yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:engine.status:11">>),
-    assert_route_to_gen_yaterl_mod({install, "engine.status"}),    
+    assert_route_to_yaterl_gen_mod({install, "engine.status"}),    
 
     ok.
     
@@ -135,15 +135,15 @@ message_routing(_Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
 yate_decoding_errors(_Config) ->
-    gen_yaterl_mod_forwarder:start_link(),
-    gen_yaterl_mod_forwarder:register(),
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
 
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, 80},
                    {"engine.status", install}],
 
     yaterl_config:yaterl_custom_module_config(
-      {gen_yaterl_mod_forwarder, SubscribeConfigList}
+      {yaterl_gen_mod_forwarder, SubscribeConfigList}
      ),
 
     start_yaterl_servers(),        
@@ -203,7 +203,7 @@ assert_yate_outgoing_data(Data) ->
             ct:fail(expected_data_never_received)
     end.
 
-assert_route_to_gen_yaterl_mod({CallbackType, MessageName}) ->
+assert_route_to_yaterl_gen_mod({CallbackType, MessageName}) ->
     receive {CallbackType, YateMessage} ->
             case yate_message:name(YateMessage) of
                 MessageName -> ok;

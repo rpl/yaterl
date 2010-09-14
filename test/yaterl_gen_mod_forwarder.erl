@@ -1,4 +1,4 @@
--module(gen_yaterl_mod_forwarder).
+-module(yaterl_gen_mod_forwarder).
 
 -behaviour(gen_server).
 

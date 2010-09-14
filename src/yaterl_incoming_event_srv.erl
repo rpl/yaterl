@@ -102,8 +102,9 @@ ack_yate_message_before_die(State) ->
     case SubscribeType of
         install -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
                                          [State#state.data]),
-                   ReplyData = gen_yaterl_mod:ack_yate_message(YateEvent),
-                   yaterl_connection_mgr:send_binary_data(ReplyData);
+                   Ack = yate_message:reply(YateEvent),
+                   Data = yate_encode:to_binary(Ack),
+                   yaterl_connection_mgr:send_binary_data(Data);
         _ -> ok
     end.
 
