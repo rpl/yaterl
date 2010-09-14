@@ -14,4 +14,9 @@
       coded in C++ using message-passing techniques, and actually scriptable in PHP
       and Python.
 
+      == Architecture ==
+
+      <img src="img/yaterl_components.png" alt="Yaterl components diagram"
+           title="Yaterl components diagram"/>
+
    @end

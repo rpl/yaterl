@@ -20,10 +20,9 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_decode' is a simple yate module to decode yate_event erlang records from binary strings.
+%% @doc '{@module}' is a simple yate module to decode yate_event erlang records 
+%%      from binary strings.
 -module(yate_decode).
-
--compile(export_all).
 
 %% @headerfile "../include/yate.hrl"
 -include("yate.hrl").
@@ -199,9 +198,9 @@ binary_split(Bin, Chars, Idx, LastSplit, Acc)
             lists:reverse(Acc)
     end.
 
-binary_join([H], Char) ->
+binary_join([H], _Char) ->
     << H/binary >>;
-binary_join([], Char) ->
+binary_join([], _Char) ->
     << >>;
 binary_join([H|T], Char) ->
     << (binary_join([H],Char))/binary, Char/binary, (binary_join(T,Char))/binary >>.

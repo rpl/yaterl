@@ -2,7 +2,9 @@
 
 -compile(export_all).
 
+-include_lib("ct.hrl").
 -include("../include/yate.hrl").
+-include("local_test_helpers.hrl").
 
 all() ->
     [
@@ -27,7 +29,8 @@ all() ->
 
 encode_nonbinary_data(_Config) ->
     YateInvalidDataException = (catch yate_encode:to_binary(non_yate_event_data)),
-    invalid_data = YateInvalidDataException#yate_exception.type.
+    {'EXIT', {function_clause, _}} = YateInvalidDataException,
+    ok.
 
 encode_invalid_application_yate_event(_Config) ->
     YateInvalidDataException = (catch yate_encode:to_binary(#yate_event{direction=nowhere})),

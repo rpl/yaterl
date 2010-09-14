@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_event' is an helper module for yate event manipulation
+%% @doc '{@module}' is an helper module for yate event manipulation
 -module(yate_event).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  
@@ -39,6 +39,11 @@
          is_setlocal/1,
          is_message/1,
          is_error/1,
+
+         type/1,
+         type/2,
+         direction/1,
+         direction/2,
 
          attr/2,
          attr/3,
@@ -106,6 +111,30 @@ is_message(YateEvent) ->
 is_error(YateEvent) ->
     YateEvent#yate_event.type =:= error.
 
+%% @doc: Get type from a yate event
+%% @spec: (YateEvent::yate_event()) -> 
+%%            watch | unwatch | install | uninstall | setlocal | 
+%%            output | error | message
+type(YateEvent) ->
+    YateEvent#yate_event.type.
+
+%% @doc: Change yate event type
+%% @spec: (Value::string(), YateEvent::yate_event()) -> 
+%%        NewYateEvent::yate_event()
+type(Value, YateEvent) ->
+    YateEvent#yate_event{type=Value}.
+
+%% @doc: Get attribute value from a yate event
+%% @spec: (YateEvent::yate_event()) -> incoming | answer | outgoing
+direction(YateEvent) ->
+    YateEvent#yate_event.direction.
+
+%% @doc: Change yate event direction
+%% @spec: (Value::string(), YateEvent::yate_event()) -> 
+%%        NewYateEvent::yate_event()
+direction(Value, YateEvent) ->
+    YateEvent#yate_event{direction=Value}.
+
 %% @doc: Get attribute value from a yate event
 %% @spec: (Key::atom(), YateEvent::yate_event()) -> Value::string()
 attr(Key, YateEvent) ->
@@ -139,7 +168,7 @@ attrs(NewAttrs, YateEvent) ->
 %% Internal functions
 %%====================================================================
 
-%% INTERNAL: change attribute's value
+%% @doc <b>[INTERNAL API]</b>: change attribute's value
 change_event_attribute(Key, NewValue, YateEvent) ->
     NewAttrs = proplists:delete(Key, YateEvent#yate_event.attrs),
     YateEvent#yate_event{attrs=[ {Key, NewValue} | NewAttrs ]}.    

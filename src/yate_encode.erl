@@ -20,10 +20,9 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_encode' is a simple yate module to encode yate_event erlang records to binary strings.
+%% @doc '{@module}' is a simple yate module to encode yate_event erlang records 
+%%      to binary strings.
 -module(yate_encode).
-
--compile(export_all).
 
 -export([to_binary/1]).
 
@@ -34,9 +33,9 @@
 %% @doc encode a yate message from a yate_event record, or throw datainvalid yate_exception
 %% @spec to_binary(YateEvt::yate_event()) -> binary()
 to_binary(YateEvt) when is_record(YateEvt,yate_event) ->
-    encode_yate_event(YateEvt);
-to_binary(_Any) ->
-    ?THROW_YATE_EXCEPTION(invalid_data, "Argument should be a yate_event record", _Any).
+    encode_yate_event(YateEvt).
+%%to_binary(_Any) ->
+%%    ?THROW_YATE_EXCEPTION(invalid_data, "Argument should be a yate_event record", _Any).
 
 %% private function to convert a yate_event in a binary string by type and direction 
 %% NOTE: only existent "Application to Engine" yate events have been implemented

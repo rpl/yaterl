@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_message' is an helper module for yate message manipulation
+%% @doc '{@module}' is an helper module for yate message manipulation
 -module(yate_message).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  
@@ -48,7 +48,9 @@
          
          is_processed/1,
          set_processed/1,
-         set_processed/2
+         set_processed/2,
+         reply/1,
+         reply/2
         ]).
 
 %%====================================================================
@@ -173,6 +175,20 @@ set_processed(true, Message) ->
     yate_event:change_event_attribute(processed, "true", Message);
 set_processed(false, Message) ->
     yate_event:change_event_attribute(processed, "false", Message).
+
+%% @doc: Create an answer yate event from a given yate event, setting processing false
+%% @spec: (Message::yate_event()) -> NewYateMessage::yate_event()
+reply(Message) ->
+    Msg1 = Message#yate_event{direction=answer},
+    set_processed(false, Msg1).
+
+%% @doc: Create an answer yate event from a given yate event, setting processing to 
+%%       Processed parameter value
+%% @spec: (Message::yate_event(), Processed::bool()) -> NewYateMessage::yate_event()
+reply(Message, Processed) ->
+    Msg1 = Message#yate_event{direction=answer},
+    set_processed(Processed, Msg1).
+    
 
 %%====================================================================
 %% Internal functions

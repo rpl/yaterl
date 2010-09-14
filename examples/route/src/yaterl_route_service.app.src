@@ -1,4 +1,4 @@
-{application, yate,
+{application, yaterl_route_service,
  [
   {description, "YATE Erlang binding"},
   {vsn, "1"},
@@ -7,6 +7,6 @@
                   kernel,
                   stdlib
                  ]},
-  {mod, { yate_app, []}},
+  {mod, { []}},
   {env, []}
  ]}.
