@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_subscribe_mgr' is a gen_fsm erlang process that 
+%% @doc '{@module}' is a gen_fsm erlang process that 
 %%      manage yate message subscribing and resolve routing of
 %%      incoming subscribed yate messages.
 -module(yate_subscribe_mgr).

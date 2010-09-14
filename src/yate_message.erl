@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_message' is an helper module for yate message manipulation
+%% @doc '{@module}' is an helper module for yate message manipulation
 -module(yate_message).
 
 %% import yate_event record definition, and other utils (yate exceptions helpers)  

@@ -20,7 +20,8 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_encode' is a simple yate module to encode yate_event erlang records to binary strings.
+%% @doc '{@module}' is a simple yate module to encode yate_event erlang records 
+%%      to binary strings.
 -module(yate_encode).
 
 -export([to_binary/1]).

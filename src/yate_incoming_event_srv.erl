@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_incoming_event_srv' is a gen_server erlang process that 
+%% @doc '{@module}' is a gen_server erlang process that 
 %%      will be spawned internally by yate_connection_mgr to process
 %%      incoming data.
 -module(yate_incoming_event_srv).

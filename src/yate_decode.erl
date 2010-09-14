@@ -20,7 +20,8 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_decode' is a simple yate module to decode yate_event erlang records from binary strings.
+%% @doc '{@module}' is a simple yate module to decode yate_event erlang records 
+%%      from binary strings.
 -module(yate_decode).
 
 %% @headerfile "../include/yate.hrl"

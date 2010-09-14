@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_connection_manager' is a gen_srv erlang process that coordinate
+%% @doc '{@module}' is a gen_srv erlang process that coordinate
 %%      application access to yate connections
 -module(yate_connection_mgr).
 

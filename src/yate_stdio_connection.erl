@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yate_stdio_connection' is a gen_server erlang process that 
+%% @doc '{@module}' is a gen_server erlang process that 
 %%      open and manage a stdio connection to YATE VOIP server.
 -module(yate_stdio_connection).
 

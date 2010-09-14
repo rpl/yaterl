@@ -20,7 +20,7 @@
 %% @author Luca Greco <luca.greco@alcacoop.it>
 %% @copyright 2009-2010 Alca Societa' Cooperativa
 
-%% @doc 'yaterl_config' is used internally to get and set yaterl configuration attributes
+%% @doc '{@module}' is used internally to get and set yaterl configuration attributes
 -module(yaterl_config).
 
 -export([
