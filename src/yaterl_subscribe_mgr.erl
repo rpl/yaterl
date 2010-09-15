@@ -105,11 +105,11 @@ init([]) ->
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'SUBSCRIBE' state events
 %% @see handle_yate_event/0
 'SUBSCRIBE'({handle_yate_event, YateEvent}, State) ->
-    {NextState, NewStateData} = case run_request_queue(YateEvent, State) of 
-        {continue, StateData} -> {'SUBSCRIBE', StateData};
-        {finish, StateData} -> {'COMPLETED', StateData}
-    end,
-    {next_state, NextState, NewStateData}.
+    case run_request_queue(YateEvent, State) of 
+        {continue, StateData} -> {next_state, 'SUBSCRIBE', StateData};
+        {finish, StateData} -> {next_state, 'COMPLETED', StateData};
+        {stop, Reason, StateData} -> {stop, Reason, StateData}
+    end.
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle sync event on any state
 %% @see resolve_custom_module/1
@@ -148,18 +148,23 @@ start_request_queue(State) ->
     run_request_queue(undefined, SubscribeState).
 
 run_request_queue(YateEvent, State) ->
-    ok = check_subscribe_reply(YateEvent, State#state.last_request),
+    CheckResult = (catch check_subscribe_reply(YateEvent, State#state.last_request)),
     {Out, NewQueue} = queue:out(State#state.subscribe_queue),
     NewState = State#state{subscribe_queue = NewQueue},
-    yaterl_logger:info_msg("SEND FROM SUBSCRIBE QUEUE: ~p~n", [Out]),
-    case Out of
-        empty -> 
+    case {CheckResult, Out} of
+        {ok, empty} -> 
             NewState2 = NewState#state{last_request=undefined},
             {finish, NewState2 }; 
-        {value, V} -> 
+        {ok, {value, V}} -> 
+            yaterl_logger:info_msg("SEND FROM SUBSCRIBE QUEUE: ~p~n", [V]),
             NewState3 = NewState#state{last_request=V},
             send_subscribe_request(V),
-            {continue, NewState3}
+            {continue, NewState3};
+        {{'EXIT', Reason}, _NextRequest} ->
+            yaterl_logger:error_msg("SUBSCRIBE ERROR:~nlast_request=~p~nlast_received=~p~n",
+                                    [State#state.last_request, YateEvent]),
+            %%% TODO: report to the configured yaterl_gen_mod 
+            {stop, Reason, NewState}
     end.
 
 % first request -> always ok

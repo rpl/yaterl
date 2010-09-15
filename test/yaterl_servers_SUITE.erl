@@ -92,7 +92,8 @@ message_subscribing_errors(_Config) ->
     yaterl_config:yaterl_custom_module_config(
       {undefined, SubscribeConfigList}
      ),
-    
+
+    yaterl_config:log_level(error),
     start_yaterl_servers(),
 
     process_flag(trap_exit, true),
@@ -103,10 +104,12 @@ message_subscribing_errors(_Config) ->
     Reply = io_lib:format("%%<watch:~s:false", [Name]),
     BinReply = list_to_binary(Reply),
     yaterl_connection_forwarder:received_binary_data(BinReply),
-    
-    %%% yaterl_subscribe_mgr die on subscribe errors
+
+    %%% yaterl_subscribe_mgr sould exit on subscribe errors
     receive {'EXIT', _Pid, Reason} ->
             ct:pal("yaterl_subscribe_mgr EXIT WITH: ~p~n", [Reason])
+    after 2000 ->
+            ct:fail(yaterl_subscribe_mgr_should_exit)
     end,
 
     ok.
