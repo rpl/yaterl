@@ -40,6 +40,7 @@ all() -> [
           configure_yaterl_gen_mod,
           % should start subscribing sequence on new connection available
           %   and configured
+          message_subscribing_errors,
           message_subscribing_sequence,
           % should route subscribed message to gen_yate_mod callbacks
           message_routing,
@@ -57,7 +58,7 @@ all() -> [
 configure_yaterl_gen_mod(_Config) ->
     yaterl_config:yaterl_custom_module_config(
        {undefined, [{"call.execute", watch},
-                    {"call.route", install, 80},
+                    {"call.route", install, "80"},
                     {"engine.status", install}]}
      ),
 
@@ -82,10 +83,38 @@ configure_yaterl_gen_mod(_Config) ->
 %%% SPEC-3: yaterl_subscribe_mgr should handle yate message subscribing %%%
 %%%         as configured                                               %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+message_subscribing_errors(_Config) ->
+    SubscribeConfigList = [{"call.execute", watch},
+                   {"call.route", install, "80"},
+                   {"engine.status", install}],
+    
+    yaterl_config:yaterl_custom_module_config(
+      {undefined, SubscribeConfigList}
+     ),
+    
+    start_yaterl_servers(),
+
+    process_flag(trap_exit, true),
+
+    Name = "call.execute",
+    YateEvent = yate_event:new(watch, [{name, Name}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<watch:~s:false", [Name]),
+    BinReply = list_to_binary(Reply),
+    yaterl_connection_forwarder:received_binary_data(BinReply),
+    
+    %%% yaterl_subscribe_mgr die on subscribe errors
+    receive {'EXIT', _Pid, Reason} ->
+            ct:pal("yaterl_subscribe_mgr EXIT WITH: ~p~n", [Reason])
+    end,
+
+    ok.
+
     
 message_subscribing_sequence(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
-                   {"call.route", install, 80},
+                   {"call.route", install, "80"},
                    {"engine.status", install}],
     
     yaterl_config:yaterl_custom_module_config(
@@ -95,7 +124,6 @@ message_subscribing_sequence(_Config) ->
     start_yaterl_servers(),
 
     assert_subscribe_sequence(SubscribeConfigList),
-
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -108,7 +136,7 @@ message_routing(_Config) ->
     yaterl_gen_mod_forwarder:register(),
 
     SubscribeConfigList = [{"call.execute", watch},
-                   {"call.route", install, 80},
+                   {"call.route", install, "80"},
                    {"engine.status", install}],
 
     yaterl_config:yaterl_custom_module_config(
@@ -139,7 +167,7 @@ yate_decoding_errors(_Config) ->
     yaterl_gen_mod_forwarder:register(),
 
     SubscribeConfigList = [{"call.execute", watch},
-                   {"call.route", install, 80},
+                   {"call.route", install, "80"},
                    {"engine.status", install}],
 
     yaterl_config:yaterl_custom_module_config(
@@ -162,7 +190,7 @@ yate_decoding_errors(_Config) ->
 
 acknowledge_on_processing_errors(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
-                   {"call.route", install, 80},
+                   {"call.route", install, "80"},
                    {"engine.status", install}],
 
     yaterl_config:yaterl_custom_module_config(
@@ -222,21 +250,21 @@ assert_subscribe_sequence([H|T]) ->
 assert_subscribe_message({Name, watch}) ->
     YateEvent = yate_event:new(watch, [{name, Name}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<watch:~p:true", [Name]),
+    Reply = io_lib:format("%%<watch:~s:true", [Name]),
     BinReply = list_to_binary(Reply),
     yaterl_connection_forwarder:received_binary_data(BinReply),
     ok;
 assert_subscribe_message({Name, install, Priority}) ->
     YateEvent = yate_event:new(install, [{name, Name},{priority, Priority}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<install:~p:~p:true", [Priority,Name]),
+    Reply = io_lib:format("%%<install:~s:~s:true", [Priority,Name]),
     BinReply = list_to_binary(Reply),
     yaterl_connection_forwarder:received_binary_data(BinReply),
     ok;
 assert_subscribe_message({Name, install}) ->
     YateEvent = yate_event:new(install, [{name, Name}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
-    Reply = io_lib:format("%%<install::~p:true", [Name]),
+    Reply = io_lib:format("%%<install::~s:true", [Name]),
     BinReply = list_to_binary(Reply),
     yaterl_connection_forwarder:received_binary_data(BinReply),
     ok.

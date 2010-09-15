@@ -33,6 +33,8 @@
 
 -behaviour(gen_fsm).
 
+-compile(export_all).
+
 %% API
 -export([
          start_link/0,
@@ -49,7 +51,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {subscribe_queue, subscribe_config}).
+-record(state, {subscribe_queue, subscribe_config, last_request}).
 
 %%====================================================================
 %% API
@@ -102,8 +104,8 @@ init([]) ->
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'SUBSCRIBE' state events
 %% @see handle_yate_event/0
-'SUBSCRIBE'({handle_yate_event, _YateEvent}, State) ->
-    {NextState, NewStateData} = case run_request_queue(State) of 
+'SUBSCRIBE'({handle_yate_event, YateEvent}, State) ->
+    {NextState, NewStateData} = case run_request_queue(YateEvent, State) of 
         {continue, StateData} -> {'SUBSCRIBE', StateData};
         {finish, StateData} -> {'COMPLETED', StateData}
     end,
@@ -143,18 +145,45 @@ start_request_queue(State) ->
     Queue = queue:from_list(State#state.subscribe_config),
     yaterl_logger:info_msg("SUBSCRIBE QUEUE: ~p~n", [Queue]),
     SubscribeState = State#state{subscribe_queue=Queue},
-    run_request_queue(SubscribeState).
+    run_request_queue(undefined, SubscribeState).
 
-run_request_queue(State) ->
+run_request_queue(YateEvent, State) ->
+    ok = check_subscribe_reply(YateEvent, State#state.last_request),
     {Out, NewQueue} = queue:out(State#state.subscribe_queue),
     NewState = State#state{subscribe_queue = NewQueue},
     yaterl_logger:info_msg("SEND FROM SUBSCRIBE QUEUE: ~p~n", [Out]),
     case Out of
-        empty -> {finish, NewState }; 
-        {value, V} -> send_subscribe_request(V),
-                      {continue, NewState}
+        empty -> 
+            NewState2 = NewState#state{last_request=undefined},
+            {finish, NewState2 }; 
+        {value, V} -> 
+            NewState3 = NewState#state{last_request=V},
+            send_subscribe_request(V),
+            {continue, NewState3}
     end.
-    
+
+% first request -> always ok
+check_subscribe_reply(undefined, undefined) ->
+    ok;
+check_subscribe_reply(YateEvent, {MessageName, install}) ->
+    true = yate_event:is_install(YateEvent),
+    answer = yate_event:direction(YateEvent),
+    MessageName = yate_event:attr(name, YateEvent),
+    "true" = yate_event:attr(success, YateEvent),
+    ok;
+check_subscribe_reply(YateEvent, {MessageName, install, Priority}) ->
+    true = yate_event:is_install(YateEvent),
+    answer = yate_event:direction(YateEvent),
+    MessageName = yate_event:attr(name, YateEvent),
+    Priority = yate_event:attr(priority, YateEvent),
+    "true" = yate_event:attr(success, YateEvent),
+    ok;    
+check_subscribe_reply(YateEvent, {MessageName, watch}) ->
+    true = yate_event:is_watch(YateEvent),
+    answer = yate_event:direction(YateEvent),
+    MessageName = yate_event:attr(name, YateEvent),
+    "true" = yate_event:attr(success, YateEvent),
+    ok.
 
 send_subscribe_request({MessageName, install}) ->
     YateEvent = yate_event:new(install, [{name, MessageName}]),

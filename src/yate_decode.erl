@@ -88,13 +88,15 @@ from_binary(_Unknown) ->
 
 decode_attributes(install_answer, Rest) when is_binary(Rest) ->
     case binary_split(Rest, ":") of
-	[ Priority, Name, Success ] -> [ { priority, Priority }, { name, Name }, { success, Success } ];
+	[ Priority, Name, Success ] -> 
+            [ { priority, Priority }, { name, Name }, { success, Success } ];
         _Any -> ?THROW_YATE_EXCEPTION(invalid_data, "Error parsing install answer attributes", _Any)
 %% throw({ invalid_data, {data, _Any}, { where, ?FILE, ?LINE } })
     end;
 decode_attributes(uninstall_answer, Rest) when is_binary(Rest) ->
     case binary_split(Rest, ":") of
-        [ Priority, Name, Success ] -> [ {priority, Priority}, { name, Name }, { success, Success } ];
+        [ Priority, Name, Success ] -> 
+            [ {priority, Priority}, { name, Name }, { success, Success } ];
         _Any -> ?THROW_YATE_EXCEPTION(invalid_data, "Error parsing uninstall answer attributes", _Any)
     end;
 decode_attributes(watch_answer, Rest) when is_binary(Rest) ->
