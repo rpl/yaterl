@@ -166,7 +166,8 @@ run_request_queue(YateEvent, State) ->
         {{'EXIT', Reason}, _NextRequest} ->
             yaterl_logger:error_msg("SUBSCRIBE ERROR:~nlast_request=~p~nlast_received=~p~n",
                                     [State#state.last_request, YateEvent]),
-            %%% TODO: report to the configured yaterl_gen_mod 
+            CustomModule = yaterl_config:yaterl_custom_module_name(),
+            CustomModule:subscribe_error(State#state.last_request, YateEvent),
             {stop, Reason, NewState}
     end.
 

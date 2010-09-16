@@ -11,6 +11,7 @@
 %% Internal export for gen_yate_mod
 -export([
          subscribe_config/0,
+         subscribe_error/2,
          handle_install_message/1,
          handle_watch_message/1
         ]).
@@ -35,6 +36,9 @@ register() ->
 subscribe_config() ->
     gen_server:call(?MODULE, subscribe_config).
 
+subscribe_error(LastRequested, LastReceived) ->
+    gen_server:call(?MODULE, {subscribe_error, LastRequested, LastReceived}).
+
 handle_install_message(YateMessage) ->
     gen_server:call(?MODULE, {handle_install_message, YateMessage}).
 
@@ -52,6 +56,10 @@ handle_call({register, Pid}, _From, State) ->
 handle_call(subscribe_config, From, State) ->
     Pid = State#state.registered_pid,
     Pid ! {subscribe_config, From},    
+    {noreply, State, infinity};    
+handle_call({subscribe_error, LastRequested, LastReceived}, From, State) ->
+    Pid = State#state.registered_pid,
+    Pid ! {subscribe_error, LastRequested, LastReceived, From},    
     {noreply, State, infinity};    
 handle_call({handle_install_message, YateMessage}, From, State) ->
     Pid = State#state.registered_pid,

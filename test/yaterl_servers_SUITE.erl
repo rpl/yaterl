@@ -129,6 +129,8 @@ message_subscribing_errors(_Config) ->
     BinReply = list_to_binary(Reply),
     yaterl_connection_forwarder:received_binary_data(BinReply),
 
+    assert_subscribe_error_called(),
+
     %%% yaterl_subscribe_mgr sould exit on subscribe errors
     receive {'EXIT', _Pid, Reason} ->
             ct:pal("yaterl_subscribe_mgr EXIT WITH: ~p~n", [Reason])
@@ -137,6 +139,15 @@ message_subscribing_errors(_Config) ->
     end,
 
     ok.
+
+assert_subscribe_error_called() ->
+    receive {subscribe_error, LastRequested, LastReceived, From} ->
+            ct:pal("subscribe_error called:~nLastRequested=~p~nLastReceived=~p~n",
+                   [LastRequested,LastReceived]),
+            gen_server:reply(From, ok)
+    after 2000 -> 
+            ct:fail(subscribe_error_callback_never_called)
+    end.
 
     
 message_subscribing_sequence(_Config) ->
