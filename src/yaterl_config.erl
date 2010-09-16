@@ -36,14 +36,8 @@
          yaterl_sup_mode/0,
          yaterl_sup_mode/1,
 
-         yaterl_custom_module_config/0,
-         yaterl_custom_module_config/1,
-
          yaterl_custom_module_name/0,
-         yaterl_custom_module_name/1,
-
-         yaterl_message_subscribe_configlist/0,
-         yaterl_message_subscribe_configlist/1
+         yaterl_custom_module_name/1
         ]).
 
 %% @doc: Get the current log_level (defaults to error)
@@ -110,61 +104,15 @@ yaterl_sup_mode() ->
 yaterl_sup_mode(Mode) ->
     set_key(yaterl_sup_mode, Mode).
 
-%% @doc: Get the current custom module config (defaults to {undefined, []})
-%% @spec: () -> {ModuleName::atom(), SubscribeList}
-%% where
-%%   SubscribeList = [SubscribeItem]
-%%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
-%%   MessageName = string()
-%%   Priority = integer()
-yaterl_custom_module_config() ->
-    get_key(yaterl_custom_module_config, {undefined, []}).
-
-%% @doc: Set the current custom module config 
-%% @spec: (Value) -> ok
-%% where
-%%   Value = {ModuleName::atom(), SubscribeList}
-%%   SubscribeList = [SubscribeItem]
-%%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
-%%   MessageName = string()
-%%   Priority = integer()
-yaterl_custom_module_config(Value) ->
-    set_key(yaterl_custom_module_config, Value).
-
-
 %% @doc: Get the current custom module name
-%% @spec: () -> ModuleName::string()
+%% @spec: () -> ModuleName::atom()
 yaterl_custom_module_name() ->
-    {CustomModuleName, _ConfigList} = yaterl_custom_module_config(),
-    CustomModuleName.
+    get_key(yaterl_custom_module, undefined).
 
 %% @doc: Set the current custom module name
-%% @spec: (Value::string()) -> ok
+%% @spec: (Value::atom()) -> ok
 yaterl_custom_module_name(Value) ->
-    {_CustomModuleName, ConfigList} = yaterl_custom_module_config(),
-    yaterl_custom_module_config({Value, ConfigList}).
-
-%% @doc: Get the current message subscribe list
-%% @spec: () -> SubscribeList
-%% where
-%%   SubscribeList = [SubscribeItem]
-%%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
-%%   MessageName = string()
-%%   Priority = integer()
-yaterl_message_subscribe_configlist() ->
-    {_CustomModuleName, ConfigList} = yaterl_custom_module_config(),
-    ConfigList.
-
-%% @doc: Set the current message subscribe list
-%% @spec: (SubscribeList) -> ok
-%% where
-%%   SubscribeList = [SubscribeItem]
-%%   SubscribeItem = {MessageName, watch} | {MessageName, install} | {MessageName, install, Priority}
-%%   MessageName = string()
-%%   Priority = integer()
-yaterl_message_subscribe_configlist(Value) ->
-    {CustomModuleName, _ConfigList} = yaterl_custom_module_config(),
-    yaterl_custom_module_config({CustomModuleName, Value}).
+    set_key(yaterl_custom_module, Value).
 
 %%--------------------------------------------------------------------
 %%% Internal functions

@@ -56,15 +56,23 @@ all() -> [
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 configure_yaterl_gen_mod(_Config) ->
-    yaterl_config:yaterl_custom_module_config(
-       {undefined, [{"call.execute", watch},
-                    {"call.route", install, "80"},
-                    {"engine.status", install}]}
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
 
     yaterl_logger:start_link(),
     yaterl_subscribe_mgr:start_link(),
+
+    SubscribeConfigList = [{"call.execute", watch},
+                           {"call.route", install, "80"},
+                           {"engine.status", install}],
     
+    yaterl_subscribe_mgr:start_subscribe_sequence(),
+    fake_subscribe_config_reply(SubscribeConfigList),
+
     FakeIncomingYateMessage1 = yate_message:new("call.execute"),
     watch = yaterl_subscribe_mgr:resolve_custom_module(FakeIncomingYateMessage1),
 
@@ -79,6 +87,17 @@ configure_yaterl_gen_mod(_Config) ->
 
     ok.
 
+fake_subscribe_config_reply(SubscribeConfigList) ->
+    receive {subscribe_config, From} ->
+            gen_server:reply(From, SubscribeConfigList);
+            Any ->
+            ct:pal("UNEXPECTED: ~p~n", [Any])
+            
+    after 500 ->
+            ct:fail(expected_subscribe_config_never_called)
+    end.
+    
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-3: yaterl_subscribe_mgr should handle yate message subscribing %%%
 %%%         as configured                                               %%%
@@ -89,12 +108,17 @@ message_subscribing_errors(_Config) ->
                    {"call.route", install, "80"},
                    {"engine.status", install}],
     
-    yaterl_config:yaterl_custom_module_config(
-      {undefined, SubscribeConfigList}
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
+
 
     yaterl_config:log_level(error),
     start_yaterl_servers(),
+    fake_subscribe_config_reply(SubscribeConfigList),
 
     process_flag(trap_exit, true),
 
@@ -120,11 +144,16 @@ message_subscribing_sequence(_Config) ->
                    {"call.route", install, "80"},
                    {"engine.status", install}],
     
-    yaterl_config:yaterl_custom_module_config(
-      {undefined, SubscribeConfigList}
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
     
     start_yaterl_servers(),
+
+    fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
     ok.
@@ -135,18 +164,20 @@ message_subscribing_sequence(_Config) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
        
 message_routing(_Config) ->
-    yaterl_gen_mod_forwarder:start_link(),
-    yaterl_gen_mod_forwarder:register(),
-
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, "80"},
                    {"engine.status", install}],
 
-    yaterl_config:yaterl_custom_module_config(
-      {yaterl_gen_mod_forwarder, SubscribeConfigList}
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
 
     start_yaterl_servers(),    
+
+    fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
 
@@ -173,11 +204,13 @@ yate_decoding_errors(_Config) ->
                    {"call.route", install, "80"},
                    {"engine.status", install}],
 
-    yaterl_config:yaterl_custom_module_config(
-      {yaterl_gen_mod_forwarder, SubscribeConfigList}
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
 
     start_yaterl_servers(),        
+
+    fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
 
@@ -196,11 +229,15 @@ acknowledge_on_processing_errors(_Config) ->
                    {"call.route", install, "80"},
                    {"engine.status", install}],
 
-    yaterl_config:yaterl_custom_module_config(
-      {undefined, SubscribeConfigList}
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
      ),
 
     start_yaterl_servers(),            
+    fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
 
@@ -208,8 +245,21 @@ acknowledge_on_processing_errors(_Config) ->
     AckMsg1 = yate_message:reply(yate_decode:from_binary(Msg1)),
 
     yaterl_connection_forwarder:received_binary_data(Msg1),
+    fake_processing_error(),
     assert_yate_outgoing_data(yate_encode:to_binary(AckMsg1)),
     ok.
+
+fake_processing_error() ->
+    receive {install, YateMessage, From} ->
+            case yate_message:name(YateMessage) of
+                MessageName -> 
+                    gen_server:reply(From, ok),
+                    ok;
+                _ -> ct:fail(unexpected_yate_message)
+            end
+    after 500 ->
+            ct:fail(expected_gen_yate_mod_callback_never_called)
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% TEST HELPERS
@@ -234,8 +284,19 @@ assert_yate_outgoing_data(Data) ->
             ct:fail(expected_data_never_received)
     end.
 
-assert_route_to_yaterl_gen_mod({CallbackType, MessageName}) ->
-    receive {CallbackType, YateMessage} ->
+assert_route_to_yaterl_gen_mod({install, MessageName}) ->
+    receive {install, YateMessage, From} ->
+            case yate_message:name(YateMessage) of
+                MessageName -> 
+                    gen_server:reply(From, ok),
+                    ok;
+                _ -> ct:fail(unexpected_yate_message)
+            end
+    after 500 ->
+            ct:fail(expected_gen_yate_mod_callback_never_called)
+    end;
+assert_route_to_yaterl_gen_mod({watch, MessageName}) ->
+    receive {watch, YateMessage} ->
             case yate_message:name(YateMessage) of
                 MessageName -> ok;
                 _ -> ct:fail(unexpected_yate_message)

@@ -90,13 +90,16 @@ resolve_custom_module(YateEvent) ->
 %% @doc: <b>[GEN_FSM CALLBACK]</b> Initiates the server
 %% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([]) ->
-    {ok, 'STARTED', #state{subscribe_config=yaterl_config:yaterl_message_subscribe_configlist()}}.
+    {ok, 'STARTED', #state{}}.
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events
 %% @see start_subscribe_sequence/0
 'STARTED'(start_subscribe_sequence, State) ->
     yaterl_logger:info_msg("start_subscribe_sequence~n"),
-    {NextState, NewStateData} = case start_request_queue(State) of
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    ConfigList = CustomModule:subscribe_config(),
+    State2 = State#state{subscribe_config = ConfigList},
+    {NextState, NewStateData} = case start_request_queue(State2) of
                                     {continue, StateData} -> {'SUBSCRIBE', StateData};
                                     {finish, StateData} -> {'COMPLETED', StateData}
                                 end,
