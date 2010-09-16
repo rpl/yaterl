@@ -127,9 +127,9 @@ processing_by_type(message, YateEvent) ->
     ResolvedRoute = resolve_custom_module(YateEvent),
     case ResolvedRoute of 
         unknown -> ok; %%% TODO: LOG AND EXIT            
-        {ModuleName, SubscribeType} -> route_to_custom_module(YateEvent,
+        {ModuleName, SubscribeType} -> route_to_custom_module(SubscribeType,
                                                               ModuleName, 
-                                                              SubscribeType)
+                                                              YateEvent)
     end.
 
 resolve_custom_module(YateEvent) ->
@@ -140,17 +140,17 @@ resolve_custom_module(YateEvent) ->
 route_to_yaterl_subscribe_mgr(YateEvent) ->
     yaterl_subscribe_mgr:handle_yate_event(YateEvent).
 
-route_to_custom_module(YateEvent, InstallModule, install) ->
+route_to_custom_module(install, InstallModule, YateEvent) ->
     yaterl_logger:info_msg("call custom handler"),
     route_to_install_module(YateEvent, InstallModule),
     ok;
-route_to_custom_module(YateEvent, WatchModule, watch) ->
+route_to_custom_module(watch, WatchModule, YateEvent) ->
     yaterl_logger:info_msg("cast custom handler"),
     route_to_watch_module(YateEvent, WatchModule),
     ok.
 
 route_to_install_module(YateEvent, InstallModule) ->
-    ReplyData = InstallModule:handle_install_message(YateEvent),
+    {yate_binary_reply, ReplyData} = InstallModule:handle_install_message(YateEvent),
     yaterl_connection_mgr:send_binary_data(ReplyData).
 
 route_to_watch_module(YateEvent, WatchModule) ->
