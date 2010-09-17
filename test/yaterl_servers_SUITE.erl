@@ -44,7 +44,8 @@ all() -> [
           message_subscribing_sequence_from_callback,
           message_subscribing_sequence_from_parameter,
           % should route subscribed message to gen_yate_mod callbacks
-          message_routing,
+          message_routing_with_unconfigure_subscribe_mgr,
+          message_routing_with_configure_subscribe_mgr,
           % should survive error deciding messages
           yate_decoding_errors,
           % should acknowledge install subscribed messages on processing errors
@@ -176,8 +177,31 @@ message_subscribing_sequence_from_parameter(_Config) ->
 %%% SPEC-4: should route subscribed message to gen_yate_mod callbacks %%%
 %%%         as configured                                             %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+message_routing_with_unconfigure_subscribe_mgr(_Config) ->
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
+     ),
+
+    start_yaterl_servers(),    
+
+    fake_connection_available(do_nothing),
+
+    yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.execute:11">>),
+    assert_route_to_yaterl_gen_mod({install, "call.execute"}),
+    
+    yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.route:11">>),
+    assert_route_to_yaterl_gen_mod({install, "call.route"}),
+
+    yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:engine.status:11">>),
+    assert_route_to_yaterl_gen_mod({install, "engine.status"}),    
+
+    ok.
        
-message_routing(_Config) ->
+message_routing_with_configure_subscribe_mgr(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, "80"},
                    {"engine.status", install}],

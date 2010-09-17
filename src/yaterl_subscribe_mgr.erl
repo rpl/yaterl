@@ -132,12 +132,7 @@ init([]) ->
 %% @see resolve_custom_module/1
 handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateData) ->
     SubscribeConfig = StateData#state.subscribe_config,
-    Reply = case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
-                none -> unknown;
-                {_MessageName, install, _Priority} -> install;
-                {_MessageName, install} -> install;
-                {_MessageName, watch} -> watch
-    end,
+    Reply = custom_module_resolving(YateEvent, SubscribeConfig),
     {reply, Reply, StateName, StateData}.
 
 %% @doc: <b>[GEN_FSM CALLBACK]</b> Handling terminate sequence. 
@@ -157,6 +152,16 @@ code_change(_OldVsn, StateName, State, _Extra) ->
 %%--------------------------------------------------------------------
 %%% Internal functions
 %%--------------------------------------------------------------------
+
+custom_module_resolving(_YateEvent, undefined) ->
+    install;
+custom_module_resolving(YateEvent, SubscribeConfig) ->
+    case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
+                none -> unknown;
+                {_MessageName, install, _Priority} -> install;
+                {_MessageName, install} -> install;
+                {_MessageName, watch} -> watch
+    end.
 
 start_request_queue(State) ->
     Queue = queue:from_list(State#state.subscribe_config),
