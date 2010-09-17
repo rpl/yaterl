@@ -77,6 +77,12 @@ behaviour_info(_Other) ->
 %% API
 %%====================================================================
 
+start_subscribe_sequence() ->
+    yaterl_subscribe_mgr:start_subscribe_sequence().
+
+start_subscribe_sequence(SubscribeConfigList) ->
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList).
+
 %%% @doc: immediately send a yate message
 dispatch(YateMessage) when is_record(YateMessage, yate_event) ->
     Data = yate_encode:to_binary(YateMessage),

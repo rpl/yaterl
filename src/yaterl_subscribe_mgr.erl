@@ -67,6 +67,11 @@ start_link() ->
 start_subscribe_sequence() ->
     gen_fsm:send_event(?SERVER, start_subscribe_sequence).
 
+%% @doc: Start the configured subscribe sequence on the active connection
+%% @spec: (SubscribeConfigList) -> ok
+start_subscribe_sequence(SubscribeConfigList) ->
+    gen_fsm:send_event(?SERVER, {start_subscribe_sequence, SubscribeConfigList}).
+
 %% @doc: Handle an incoming yate subscribe event (watch, unwatch, install, uninstall)
 %%       during 'REGISTERING' state
 %% @spec: (YateEvent::yate_event()) -> ok
@@ -94,11 +99,20 @@ init([]) ->
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events
 %% @see start_subscribe_sequence/0
+%% @see start_subscribe_sequence/1
 'STARTED'(start_subscribe_sequence, State) ->
-    yaterl_logger:info_msg("start_subscribe_sequence~n"),
+    yaterl_logger:info_msg("start_subscribe_sequence/0 ~n"),
     CustomModule = yaterl_config:yaterl_custom_module_name(),
     ConfigList = CustomModule:subscribe_config(),
     State2 = State#state{subscribe_config = ConfigList},
+    {NextState, NewStateData} = case start_request_queue(State2) of
+                                    {continue, StateData} -> {'SUBSCRIBE', StateData};
+                                    {finish, StateData} -> {'COMPLETED', StateData}
+                                end,
+    {next_state, NextState, NewStateData};
+'STARTED'({start_subscribe_sequence, SubscribeConfigList}, State) ->
+    yaterl_logger:info_msg("start_subscribe_sequence/1 ~n"),
+    State2 = State#state{subscribe_config = SubscribeConfigList},
     {NextState, NewStateData} = case start_request_queue(State2) of
                                     {continue, StateData} -> {'SUBSCRIBE', StateData};
                                     {finish, StateData} -> {'COMPLETED', StateData}

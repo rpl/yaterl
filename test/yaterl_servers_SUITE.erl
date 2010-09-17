@@ -41,7 +41,8 @@ all() -> [
           % should start subscribing sequence on new connection available
           %   and configured
           message_subscribing_errors,
-          message_subscribing_sequence,
+          message_subscribing_sequence_from_callback,
+          message_subscribing_sequence_from_parameter,
           % should route subscribed message to gen_yate_mod callbacks
           message_routing,
           % should survive error deciding messages
@@ -130,7 +131,7 @@ message_subscribing_errors(_Config) ->
 
     ok.
     
-message_subscribing_sequence(_Config) ->
+message_subscribing_sequence_from_callback(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, "80"},
                    {"engine.status", install}],
@@ -149,6 +150,27 @@ message_subscribing_sequence(_Config) ->
 
     assert_subscribe_sequence(SubscribeConfigList),
     ok.
+
+message_subscribing_sequence_from_parameter(_Config) ->
+    SubscribeConfigList = [{"call.execute", watch},
+                   {"call.route", install, "80"},
+                   {"engine.status", install}],
+    
+    yaterl_gen_mod_forwarder:start_link(),
+    yaterl_gen_mod_forwarder:register(),
+
+    yaterl_config:yaterl_custom_module_name(
+       yaterl_gen_mod_forwarder
+     ),
+    
+    start_yaterl_servers(),
+
+    fake_connection_available(do_nothing),
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
+
+    assert_subscribe_sequence(SubscribeConfigList),
+    ok.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-4: should route subscribed message to gen_yate_mod callbacks %%%
