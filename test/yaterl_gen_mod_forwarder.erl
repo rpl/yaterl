@@ -10,6 +10,7 @@
 
 %% Internal export for gen_yate_mod
 -export([
+         connection_available/0,
          subscribe_config/0,
          subscribe_error/2,
          handle_install_message/1,
@@ -33,6 +34,9 @@ register() ->
 
 %% GEN_YATE_MOD CALLBACKS
 
+connection_available() ->
+    gen_server:call(?MODULE, connection_available).
+
 subscribe_config() ->
     gen_server:call(?MODULE, subscribe_config).
 
@@ -53,6 +57,10 @@ init([]) ->
 handle_call({register, Pid}, _From, State) ->
     NewState=State#state{registered_pid=Pid},
     {reply, ok, NewState};
+handle_call(connection_available, From, State) ->
+    Pid = State#state.registered_pid,
+    Pid ! {connection_available, From},    
+    {noreply, State, infinity};    
 handle_call(subscribe_config, From, State) ->
     Pid = State#state.registered_pid,
     Pid ! {subscribe_config, From},    

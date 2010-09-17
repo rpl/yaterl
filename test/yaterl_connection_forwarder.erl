@@ -17,7 +17,7 @@
 
 %% Internal gen_server callbacks
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_info/2,
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2,
          terminate/2]).
 
 -record(state, {registered_pid, mgr}).
@@ -31,7 +31,7 @@ register() ->
     gen_server:call(?MODULE, {register, self()}).
 
 connect_to(ModuleName) ->
-    gen_server:call(?MODULE, {connect_to, ModuleName}).
+    gen_server:cast(?MODULE, {connect_to, ModuleName}).
 
 received_binary_data(Data) ->
     gen_server:call(?MODULE, {received_binary_data, Data}).
@@ -47,10 +47,6 @@ init([]) ->
 handle_call({register, Pid}, _From, State) ->
     NewState=State#state{registered_pid=Pid},
     {reply, ok, NewState};
-handle_call({connect_to, ModuleName}, _From, State) ->
-    ok = ModuleName:set_yate_connection(local, ?MODULE),
-    NewState=State#state{mgr=ModuleName},
-    {reply, ok, NewState};
 handle_call({received_binary_data, Data}, _From, State) ->
     Mgr=State#state.mgr,
     Mgr:received_binary_data(Data),
@@ -59,6 +55,12 @@ handle_call({send_binary_data, Data}, _From, State) ->
     Pid = State#state.registered_pid,
     Pid ! Data,
     {reply, ok, State}.
+
+handle_cast({connect_to, ModuleName}, State) ->
+    ok = ModuleName:set_yate_connection(local, ?MODULE),
+    NewState=State#state{mgr=ModuleName},
+    {noreply, NewState}.
+
 
 handle_info(_, State) ->
     {ok,State}.

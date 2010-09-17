@@ -120,7 +120,7 @@ handle_call({set_yate_connection, YateConnection_ModuleName},
     yaterl_logger:info_msg("yate_connection_mgr set_yate_connection local: ~w~n", 
                           [YateConnection_ModuleName]),
     NewState = State#state{yate_connection = {local, YateConnection_ModuleName}},
-    start_yate_message_subscribe_sequence(),
+    connection_available_handling(),
     Reply = ok,
     {reply, Reply, NewState};
 handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_ModuleName}, 
@@ -130,7 +130,7 @@ handle_call({set_yate_connection, YateConnection_NodeName, YateConnection_Module
     NewState = State#state{yate_connection = {remote, YateConnection_NodeName,
                                               YateConnection_ModuleName}},
     erlang:monitor_node(YateConnection_NodeName, true),
-    start_yate_message_subscribe_sequence(),
+    connection_available_handling(),
     Reply = ok,
     {reply, Reply, NewState}.
 
@@ -187,7 +187,17 @@ send_to_yate_connection({remote, YateConnection_NodeName,
 process_incoming_data(Data) ->
     {ok, Pid} = yaterl_incoming_event_srv:start(Data),
     yaterl_incoming_event_srv:run(Pid).
-    
+
+connection_available_handling() ->
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    Action = CustomModule:connection_available(),
+    case Action of
+        do_nothing ->
+            ok;
+        start_subscribe_sequence ->
+            start_yate_message_subscribe_sequence()
+    end.
+
 start_yate_message_subscribe_sequence() ->
     yaterl_subscribe_mgr:start_subscribe_sequence().
 

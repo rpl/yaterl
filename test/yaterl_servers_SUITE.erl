@@ -85,18 +85,7 @@ configure_yaterl_gen_mod(_Config) ->
     FakeIncomingYateMessage4 = yate_message:new("nonsubscribed.message"),
     unknown = yaterl_subscribe_mgr:resolve_custom_module(FakeIncomingYateMessage4),
 
-    ok.
-
-fake_subscribe_config_reply(SubscribeConfigList) ->
-    receive {subscribe_config, From} ->
-            gen_server:reply(From, SubscribeConfigList);
-            Any ->
-            ct:pal("UNEXPECTED: ~p~n", [Any])
-            
-    after 500 ->
-            ct:fail(expected_subscribe_config_never_called)
-    end.
-    
+    ok.    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SPEC-3: yaterl_subscribe_mgr should handle yate message subscribing %%%
@@ -118,6 +107,7 @@ message_subscribing_errors(_Config) ->
 
     yaterl_config:log_level(error),
     start_yaterl_servers(),
+    fake_connection_available(start_subscribe_sequence),
     fake_subscribe_config_reply(SubscribeConfigList),
 
     process_flag(trap_exit, true),
@@ -139,16 +129,6 @@ message_subscribing_errors(_Config) ->
     end,
 
     ok.
-
-assert_subscribe_error_called() ->
-    receive {subscribe_error, LastRequested, LastReceived, From} ->
-            ct:pal("subscribe_error called:~nLastRequested=~p~nLastReceived=~p~n",
-                   [LastRequested,LastReceived]),
-            gen_server:reply(From, ok)
-    after 2000 -> 
-            ct:fail(subscribe_error_callback_never_called)
-    end.
-
     
 message_subscribing_sequence(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
@@ -164,6 +144,7 @@ message_subscribing_sequence(_Config) ->
     
     start_yaterl_servers(),
 
+    fake_connection_available(start_subscribe_sequence),
     fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
@@ -188,6 +169,7 @@ message_routing(_Config) ->
 
     start_yaterl_servers(),    
 
+    fake_connection_available(start_subscribe_sequence),
     fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
@@ -221,6 +203,7 @@ yate_decoding_errors(_Config) ->
 
     start_yaterl_servers(),        
 
+    fake_connection_available(start_subscribe_sequence),
     fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
@@ -248,6 +231,8 @@ acknowledge_on_processing_errors(_Config) ->
      ),
 
     start_yaterl_servers(),            
+
+    fake_connection_available(start_subscribe_sequence),
     fake_subscribe_config_reply(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
@@ -259,18 +244,6 @@ acknowledge_on_processing_errors(_Config) ->
     fake_processing_error(),
     assert_yate_outgoing_data(yate_encode:to_binary(AckMsg1)),
     ok.
-
-fake_processing_error() ->
-    receive {install, YateMessage, From} ->
-            case yate_message:name(YateMessage) of
-                MessageName -> 
-                    gen_server:reply(From, ok),
-                    ok;
-                _ -> ct:fail(unexpected_yate_message)
-            end
-    after 500 ->
-            ct:fail(expected_gen_yate_mod_callback_never_called)
-    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%% TEST HELPERS
@@ -284,7 +257,47 @@ start_yaterl_servers() ->
     yaterl_connection_forwarder:start_link(),
     yaterl_connection_forwarder:register(),
     yaterl_connection_forwarder:connect_to(yaterl_connection_mgr).
-    
+ 
+fake_connection_available(Reply) ->
+    receive {connection_available, From} ->
+            gen_server:reply(From, Reply);
+            Any ->
+            ct:pal("UNEXPECTED: ~p~n", [Any])
+            
+    after 500 ->
+            ct:fail(expected_connection_available_never_called)
+    end.    
+   
+fake_subscribe_config_reply(SubscribeConfigList) ->
+    receive {subscribe_config, From} ->
+            gen_server:reply(From, SubscribeConfigList);
+            Any ->
+            ct:pal("UNEXPECTED: ~p~n", [Any])
+            
+    after 500 ->
+            ct:fail(expected_subscribe_config_never_called)
+    end.
+
+fake_processing_error() ->
+    receive {install, YateMessage, From} ->
+            case yate_message:name(YateMessage) of
+                MessageName -> 
+                    gen_server:reply(From, ok),
+                    ok;
+                _ -> ct:fail(unexpected_yate_message)
+            end
+    after 500 ->
+            ct:fail(expected_gen_yate_mod_callback_never_called)
+    end.
+
+assert_subscribe_error_called() ->
+    receive {subscribe_error, LastRequested, LastReceived, From} ->
+            ct:pal("subscribe_error called:~nLastRequested=~p~nLastReceived=~p~n",
+                   [LastRequested,LastReceived]),
+            gen_server:reply(From, ok)
+    after 2000 -> 
+            ct:fail(subscribe_error_callback_never_called)
+    end.
 
 assert_yate_outgoing_data(Data) ->
     ct:pal("YATE OUTGOING DATA (Expect: ~p~n", [Data]),

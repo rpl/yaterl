@@ -15,7 +15,20 @@
 %%====================================================================
 
 %%% @doc: <b>BEHAVIOUR CALLBACK</b> return yaterl_gen_mod callbacks list
-%%%    
+%%% 
+%%% <b>connection_available</b>: custom on connection available callback
+%%% Example 1:
+%%% ```
+%%% connection_available() ->
+%%%    do_nothing.
+%%% '''
+%%%
+%%% Example 2:
+%%% ```
+%%% connection_available() ->
+%%%    start_subscribe_sequence.
+%%% '''
+%%%
 %%% <b>subscribe_config</b>: return a subscribe config list.
 %%% Example:
 %%% ```
@@ -52,7 +65,8 @@
 %%%    end.
 %%% '''
 behaviour_info(callbacks) ->
-    [{subscribe_config, 0},
+    [{connection_available, 0},
+     {subscribe_config, 0},
      {subscribe_error, 2},
      {handle_watch_message, 1},
      {handle_install_message, 1}];
