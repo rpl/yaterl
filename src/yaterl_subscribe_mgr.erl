@@ -199,6 +199,8 @@ check_subscribe_reply(YateEvent, {MessageName, install}) ->
     MessageName = yate_event:attr(name, YateEvent),
     "true" = yate_event:attr(success, YateEvent),
     ok;
+check_subscribe_reply(YateEvent, {MessageName, install, {filters, _FiltersList}}) ->
+    check_subscribe_reply(YateEvent, {MessageName, install});
 check_subscribe_reply(YateEvent, {MessageName, install, Priority}) ->
     true = yate_event:is_install(YateEvent),
     answer = yate_event:direction(YateEvent),
@@ -206,6 +208,9 @@ check_subscribe_reply(YateEvent, {MessageName, install, Priority}) ->
     Priority = yate_event:attr(priority, YateEvent),
     "true" = yate_event:attr(success, YateEvent),
     ok;    
+check_subscribe_reply(YateEvent, {MessageName, install, Priority,
+                                  {filters, _FiltersList}}) ->
+    check_subscribe_reply(YateEvent, {MessageName, install, Priority});
 check_subscribe_reply(YateEvent, {MessageName, watch}) ->
     true = yate_event:is_watch(YateEvent),
     answer = yate_event:direction(YateEvent),
@@ -217,8 +222,17 @@ send_subscribe_request({MessageName, install}) ->
     YateEvent = yate_event:new(install, [{name, MessageName}]),
     send_to_yate(YateEvent),
     ok;
+send_subscribe_request({MessageName, install, {filters, FiltersList}}) ->
+    YateEvent = yate_event:new(install, [{name, MessageName},{filters, FiltersList}]),
+    send_to_yate(YateEvent),
+    ok;
 send_subscribe_request({MessageName, install, Priority}) ->
     YateEvent = yate_event:new(install, [{name, MessageName},{priority, Priority}]),
+    send_to_yate(YateEvent),
+    ok;
+send_subscribe_request({MessageName, install, Priority, {filters, FiltersList}}) ->
+    YateEvent = yate_event:new(install, [{name, MessageName},{priority, Priority},
+                                         {filters, FiltersList}]),
     send_to_yate(YateEvent),
     ok;
 send_subscribe_request({MessageName, watch}) ->
