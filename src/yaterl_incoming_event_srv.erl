@@ -117,6 +117,8 @@ processing_by_type(watch, YateEvent) ->
     route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(install, YateEvent) ->
     route_to_yaterl_subscribe_mgr(YateEvent);
+processing_by_type(setlocal, YateEvent) ->
+    route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(unwatch, YateEvent) ->
     route_to_yaterl_subscribe_mgr(YateEvent);
 processing_by_type(uninstall, YateEvent) ->

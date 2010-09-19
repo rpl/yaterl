@@ -133,11 +133,12 @@ message_subscribing_errors(_Config) ->
     ok.
     
 message_subscribing_sequence_from_callback(_Config) ->
-    SubscribeConfigList = [{"call.execute", watch},
-                   {"call.route", install, "80"},
-                   {"engine.status", install, 
-                    {filters, [{module,"conference"}]}
-                   }],
+    SubscribeConfigList = [{setlocal, "id", "yaterl/1"},
+                           {"call.execute", watch},
+                           {"call.route", install, "80"},
+                           {"engine.status", install, 
+                            {filters, [{module,"conference"}]}
+                           }],
     
     yaterl_gen_mod_forwarder:start_link(),
     yaterl_gen_mod_forwarder:register(),
@@ -386,6 +387,13 @@ assert_subscribe_sequence([H|T]) ->
     assert_subscribe_message(H),
     assert_subscribe_sequence(T).
 
+assert_subscribe_message({setlocal, Name, Value}) ->
+    YateEvent = yate_event:new(setlocal, [{name, Name},{value, Value}]),
+    assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),
+    Reply = io_lib:format("%%<setlocal:~s:~s:true", [Name,Value]),
+    BinReply = list_to_binary(Reply),
+    yaterl_connection_forwarder:received_binary_data(BinReply),
+    ok;
 assert_subscribe_message({Name, watch}) ->
     YateEvent = yate_event:new(watch, [{name, Name}]),
     assert_yate_outgoing_data(yate_encode:to_binary(YateEvent)),

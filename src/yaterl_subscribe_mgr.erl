@@ -193,6 +193,13 @@ run_request_queue(YateEvent, State) ->
 % first request -> always ok
 check_subscribe_reply(undefined, undefined) ->
     ok;
+check_subscribe_reply(YateEvent, {setlocal, Name, Value}) ->
+    true = yate_event:is_setlocal(YateEvent),
+    answer = yate_event:direction(YateEvent),
+    Name = yate_event:attr(name, YateEvent),
+    Value = yate_event:attr(value, YateEvent),
+    "true" = yate_event:attr(success, YateEvent),
+    ok;
 check_subscribe_reply(YateEvent, {MessageName, install}) ->
     true = yate_event:is_install(YateEvent),
     answer = yate_event:direction(YateEvent),
@@ -218,6 +225,10 @@ check_subscribe_reply(YateEvent, {MessageName, watch}) ->
     "true" = yate_event:attr(success, YateEvent),
     ok.
 
+send_subscribe_request({setlocal, Name, Value}) ->
+    YateEvent = yate_event:new(setlocal, [{name, Name},{value, Value}]),
+    send_to_yate(YateEvent),
+    ok;
 send_subscribe_request({MessageName, install}) ->
     YateEvent = yate_event:new(install, [{name, MessageName}]),
     send_to_yate(YateEvent),
