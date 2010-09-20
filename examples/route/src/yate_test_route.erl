@@ -15,13 +15,12 @@ connection_available() ->
 
 subscribe_config() ->
     error_logger:error_msg("SUBSCRIBE CONFIG"),
-    [{"call.route", install, "80"}].
+    [{"call.route", install, 80}].
 %     {"call.route", install, 80, {filters, [{"module", "conference"}]}}].
 
 subscribe_error(_LastResponse, _LastRequest) ->
     error_logger:error_msg("SUBSCRIBE ERROR... EXITING"),
-    timer:sleep(10000),
-    erlang:halt(1).
+    init:stop(1).
 
 
 handle_install_message(YateMessage) ->
