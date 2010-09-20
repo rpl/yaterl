@@ -4,7 +4,7 @@
    @copyright 2009-2010 Alca Societa' Cooperativa 
    @version 0.1
    @title yaterl: YATE Erlang module
-   @doc `YATErl' is a simple Erlang binding developer by Alca Società Cooperativa
+   @doc `YATErl' is a simple Erlang binding developed by Alca Società Cooperativa
       ([http://alcacoop.it]), to create YATE-based VOIP applications using the
       powerful feature of the Erlang language and OTP framework.
       YATErl is designed as a standard OTP application so you can create an OTP release
