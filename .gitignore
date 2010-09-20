@@ -7,4 +7,5 @@ apps/*/deps
 apps/*/coverage
 apps/*/logs
 apps/*/test/cover.spec
-
+examples/*/ebin
+apps/yaterl_devtool/bin/yaterl_devtool

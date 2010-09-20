@@ -2,18 +2,18 @@
 
 -export([
          help/0,
-         run/1,
+         main/1,
          generate/2,
          pack/2,
          connect/1
         ]).
 
-help() ->
-    getopt_help().
-
-run(Args) ->
+main(Args) ->
     io:format("INPUT: ~p~n", [Args]),
     getopt_parse_run(Args).
+
+help() ->
+    getopt_help().
     
 generate(ProjectName, ProjectType) ->
     generate_dirtree(ProjectName, ProjectType),
@@ -69,7 +69,7 @@ write_zip_to_file(ProjectName, ProjectType, ZipBin) ->
     case file:write_file(ProjectName, ScriptData) of
         ok ->
             io:format("SUCCESS: packed script to '~s'~n", [ProjectName]),
-            [] = os:cmd("chmod u+x "++ProjectName);
+            [] = os:cmd("chmod a+x "++ProjectName);
         {error, WriteError} ->
             io:format("ERROR: failed to write yaterl_gen_mod packed script to file~n~p~n",
                       [WriteError]),
@@ -116,6 +116,8 @@ getopt_parse_run(Args) ->
     ProjectType = proplists:lookup(project_type, Opts),
     execute(Help, GenerateProjectName, PackProjectName, ProjectType).
 
+execute(none, none, none, none) ->
+    help();
 execute({help, true}, _, _, _) ->
     help();
 execute(none, {generate_project_name, ProjectName}, none, none) ->
