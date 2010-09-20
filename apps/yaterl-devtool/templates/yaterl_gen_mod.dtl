@@ -1,0 +1,69 @@
+-module({{ project_name }}).
+
+-behaviour(yaterl_gen_mod).
+
+-export([
+         connection_available/0,
+         subscribe_config/0,
+         subscribe_error/2,
+         handle_install_message/1,
+         main/1
+        ]).
+
+connection_available() ->
+    %% NOTE: start_subscribe_sequence | do_nothing
+    do_nothing.
+
+subscribe_config() ->
+    %% NOTE:
+    %% [{setlocal, "param", "value"},
+    %%  {"first.message", watch},
+    %%  {"second.message", install, 80},
+    %%  {"third.message", install, 80, {filters, [{"param", "value"}]}}]
+    [].
+
+subscribe_error(_LastResponse, _LastRequest) ->
+    error_logger:error_msg("SUBSCRIBE ERROR... EXITING"),
+    init:stop(1).
+
+
+handle_install_message(YateMessage) ->
+    case {yate_message:name(YateMessage),
+          yate_event:direction(YateMessage),
+          yate_message:param(param_name, YateMessage)} of
+        {"second.message", incoming, "123"} ->
+            %% NOTE: you have to return a reply/ack
+            %%   yaterl_gen_mod:reply(YateMessage)
+            %%   yaterl_gen_mod:ack(YateMessage)
+            do_something;
+        _AnyOther -> log(YateMessage)
+    end.
+
+handle_watch_message(_YateMessage) ->
+    %% NOTE: return value ignored
+    ok.
+
+
+log(YateMessage) ->
+    error_logger:info_msg("IGNORED Msg: ~p~n", [YateMessage]),
+    yaterl_gen_mod:ack(YateMessage).
+    
+main(_) ->
+    configure_logging(),
+    yaterl_config:yaterl_custom_module_name({{ project_name }}),
+
+    application:start(sasl),
+    application:start(yaterl),
+    application:start({{ project_name }}),
+
+    timer:sleep(infinity).
+
+
+configure_logging() ->
+    error_logger:tty(false),
+    error_logger:logfile({open, "/var/log/{{ project_name }}_errorlogger.log"}),
+    application:set_env(sasl, sasl_error_logger,
+                        {file, "/var/log/{{ project_name }}_sasl.log"}),
+    application:set_env(sasl, errlog_type, all),
+    
+    yaterl_config:log_level(error).
