@@ -27,6 +27,8 @@
          log_level/0,
          log_level/1,
 
+         log_files/2,
+
          whereis_yaterl_connection_mgr/0,
          whereis_yaterl_connection_mgr/1,
 
@@ -51,6 +53,17 @@ log_level() ->
 %%   Value = disabled | error | warn | info
 log_level(Value) ->
     set_key(log_level, Value).
+
+%% @doc: Set the application and sasl log files
+%% @spec: (AppLogFile::string(), SaslLogFile::string()) -> ok
+log_files(AppLogFile, SaslLogFile) when is_list(AppLogFile), is_list(SaslLogFile)->
+    error_logger:tty(false),
+    error_logger:logfile({open, AppLogFile}),
+    application_controller:change_application_data([{application, sasl, []}],
+                      [
+                       {sasl, [{sasl_error_logger, {file, SaslLogFile}}]}
+                      ]),
+    ok.
 
 %% @doc: Get the yaterl_connection_mgr location
 %% @spec: () -> ConnectionMgr_Location

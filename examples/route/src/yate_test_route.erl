@@ -2,13 +2,29 @@
 
 -behaviour(yaterl_gen_mod).
 
+-compile(export_all).
+
 -export([
+         main/1,
          connection_available/0,
          subscribe_config/0,
          subscribe_error/2,
-         handle_install_message/1,
-         main/1
+         handle_install_message/1
         ]).
+
+config() ->
+    LogDir = "/tmp/",
+    BaseLogFileName = [LogDir,atom_to_list(?MODULE),"_",os:getpid()],
+    yaterl_config:log_files(BaseLogFileName++".log", 
+                            BaseLogFileName++"_sasl.log"),
+    yaterl_config:yaterl_custom_module_name(?MODULE),
+    ok.
+
+main(_) ->
+    ok = config(),
+    ok = application:start(sasl),
+    ok = application:start(yaterl),
+    timer:sleep(infinity).
 
 connection_available() ->
     start_subscribe_sequence.
@@ -42,10 +58,3 @@ route_to_dial(YateMessage) ->
     YateReply = yate_message:retvalue("tone/busy",YateMessage),
     yaterl_gen_mod:reply(YateReply).
 
-main(_) ->
-    error_logger:tty(false),
-    error_logger:logfile({open, "/tmp/yaterl_route_service.logfile"}),
-    application:start(sasl),
-    application:start(yaterl),
-    application:start(yaterl_route_service),
-    timer:sleep(infinity).
