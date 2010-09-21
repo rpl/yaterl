@@ -43,27 +43,25 @@ handle_watch_message(_YateMessage) ->
     %% NOTE: return value ignored
     ok.
 
-
 log(YateMessage) ->
     error_logger:info_msg("IGNORED Msg: ~p~n", [YateMessage]),
     yaterl_gen_mod:ack(YateMessage).
-    
+
+%%% NOTE: escript entry point    
 main(_) ->
-    configure_logging(),
-    yaterl_config:yaterl_custom_module_name({{ project_name }}),
-
-    application:start(sasl),
-    application:start(yaterl),
-    application:start({{ project_name }}),
-
+    config(),
+    ok = application:start(sasl),
+    ok = application:start(yaterl),
     timer:sleep(infinity).
 
+%%% NOTE: logging and yaterl configurations
+config() ->
+    LogDir = "/tmp/",
+    BaseLogFileName = [LogDir,atom_to_list(?MODULE),"_",os:getpid()],
+    yaterl_config:log_level(error),
+    yaterl_config:log_files(BaseLogFileName++".log", 
+                            BaseLogFileName++"_sasl.log"),
 
-configure_logging() ->
-    error_logger:tty(false),
-    error_logger:logfile({open, "/var/log/{{ project_name }}_errorlogger.log"}),
-    application:set_env(sasl, sasl_error_logger,
-                        {file, "/var/log/{{ project_name }}_sasl.log"}),
-    application:set_env(sasl, errlog_type, all),
-    
-    yaterl_config:log_level(error).
+    yaterl_config:yaterl_custom_module_name(?MODULE),
+    ok.
+
