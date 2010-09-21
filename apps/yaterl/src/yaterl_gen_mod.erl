@@ -3,6 +3,9 @@
 -export([
          behaviour_info/1,
 
+         start_subscribe_sequence/0,
+         start_subscribe_sequence/1,
+
          dispatch/1,
          reply/1,
          ack/1
