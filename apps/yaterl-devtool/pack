@@ -14,7 +14,7 @@ main(_) ->
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             Script = <<"#!/usr/bin/env escript\n",
-                       "%%!-sname yaterl_devtool -noinput\n", 
+                       "%%!-sname yaterl_devtool -noinput -sasl\n", 
                        ZipBin/binary>>,
             
             case file:write_file("bin/yaterl_devtool", Script) of
