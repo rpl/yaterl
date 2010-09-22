@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Module yaterl_gen_mod</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module yaterl_gen_mod</h1>
+<ul class="index"><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
+
+<p><b>This module defines the <tt>yaterl_gen_mod</tt> behaviour.</b><br> Required callback functions: <tt>connection_available/0</tt>, <tt>subscribe_config/0</tt>, <tt>subscribe_error/2</tt>, <tt>handle_watch_message/1</tt>, <tt>handle_install_message/1</tt>.</p>
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#ack-1">ack/1</a></td><td> create a binary encoded ack (unhandled yate message) to be
+         returned from an handle_install_message.</td></tr>
+<tr><td valign="top"><a href="#behaviour_info-1">behaviour_info/1</a></td><td> <b>BEHAVIOUR CALLBACK</b> return yaterl_gen_mod callbacks list.</td></tr>
+<tr><td valign="top"><a href="#dispatch-1">dispatch/1</a></td><td> immediately send a yate message.</td></tr>
+<tr><td valign="top"><a href="#reply-1">reply/1</a></td><td> create a binary encoded reply (handled yate message) to be
+         returned from an handle_install_message.</td></tr>
+<tr><td valign="top"><a href="#start_subscribe_sequence-0">start_subscribe_sequence/0</a></td><td></td></tr>
+<tr><td valign="top"><a href="#start_subscribe_sequence-1">start_subscribe_sequence/1</a></td><td></td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="ack-1">ack/1</a></h3>
+<div class="spec">
+<p><tt>ack(YateMessage) -&gt; any()</tt></p>
+</div><p> create a binary encoded ack (unhandled yate message) to be
+         returned from an handle_install_message</p>
+
+<h3 class="function"><a name="behaviour_info-1">behaviour_info/1</a></h3>
+<div class="spec">
+<p><tt>behaviour_info(Other) -&gt; any()</tt></p>
+</div><p><p> <b>BEHAVIOUR CALLBACK</b> return yaterl_gen_mod callbacks list</p>
+  
+   <b>connection_available</b>: custom on connection available callback
+   Example 1:
+   <pre>   connection_available() -&gt;
+      do_nothing.</pre>
+  
+   Example 2:
+   <pre>   connection_available() -&gt;
+      start_subscribe_sequence.</pre>
+  
+   <b>subscribe_config</b>: return a subscribe config list.
+   Example:
+   <pre>   subscribe_config() -&gt;
+      [{"call.execute", install, 20},
+       {"custom.message", watch}].</pre>
+   <b>subscribe_error</b>: custom subscribe error handling.
+   Example:
+   <pre>   subscribe_error(LastRequested, LastReceived) -&gt;
+      error_logger:error_msg("Subscribe Error: ...", [LastRequested, LastReceived]),
+      erlang:halt(-1).</pre>
+  
+   <b>handle_watch_message</b>: watched message handling (return value ignored).
+   Example:
+   <pre>   handle_watch_message(YateMsg) -&gt;
+      error_logger:info_msg("Watched Event Received: ~p~n", [YateEvent]).</pre>
+  
+   <b>handle_install_message</b>: installed message handling (return value replied to yate)
+   Example:
+   <pre>   handle_install_message(YateMsg) -&gt;
+      Name = yate_message:name(YateMessage),
+      Direction = yate_event:direction(YateMessage),
+      Called = yate_message:param(called, YateMessage)
+      case {Name, Direction, Called} of
+          {"call.route", incoming, "123"} -&gt;
+              route_to_dial(YateMessage);
+          _AnyOther -&gt; log(YateMessage)
+      end.</pre></p>
+
+<h3 class="function"><a name="dispatch-1">dispatch/1</a></h3>
+<div class="spec">
+<p><tt>dispatch(YateMessage) -&gt; any()</tt></p>
+</div><p> immediately send a yate message</p>
+
+<h3 class="function"><a name="reply-1">reply/1</a></h3>
+<div class="spec">
+<p><tt>reply(YateMessage) -&gt; any()</tt></p>
+</div><p> create a binary encoded reply (handled yate message) to be
+         returned from an handle_install_message</p>
+
+<h3 class="function"><a name="start_subscribe_sequence-0">start_subscribe_sequence/0</a></h3>
+<div class="spec">
+<p><tt>start_subscribe_sequence() -&gt; any()</tt></p>
+</div>
+
+<h3 class="function"><a name="start_subscribe_sequence-1">start_subscribe_sequence/1</a></h3>
+<div class="spec">
+<p><tt>start_subscribe_sequence(SubscribeConfigList) -&gt; any()</tt></p>
+</div>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Sep 22 2010, 16:10:13.</i></p>
+</body>
+</html>

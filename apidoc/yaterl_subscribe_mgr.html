@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Module yaterl_subscribe_mgr</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module yaterl_subscribe_mgr</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>'yaterl_subscribe_mgr' is a gen_fsm erlang process that       
+manage yate message subscribe sequence and       
+resolve routing of incoming subscribed yate messages.
+<p>Copyright © 2009-2010 Alca Societa' Cooperativa</p>
+
+<p><b>Behaviours:</b> <a href="gen_fsm.html"><tt>gen_fsm</tt></a>.</p>
+<p><b>Authors:</b> Luca Greco (<a href="mailto:luca.greco@alcacoop.it"><tt>luca.greco@alcacoop.it</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2><p>'yaterl_subscribe_mgr' is a gen_fsm erlang process that       
+manage yate message subscribe sequence and       
+resolve routing of incoming subscribed yate messages.</p>
+ 
+   <h3><a name="UML_State_Machine_Diagram">UML State Machine Diagram</a></h3>
+ 
+       <img src="img/yaterl_subscribe_mgr_fsm.png" alt="Yaterl subscribe manager FSM" title="Yaterl subscribe manager FSM">
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#STARTED-2">'STARTED'/2</a></td><td><b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events.</td></tr>
+<tr><td valign="top"><a href="#SUBSCRIBE-2">'SUBSCRIBE'/2</a></td><td><b>[GEN_FSM CALLBACK]</b> handle 'SUBSCRIBE' state events.</td></tr>
+<tr><td valign="top"><a href="#code_change-4">code_change/4</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed.</td></tr>
+<tr><td valign="top"><a href="#handle_sync_event-4">handle_sync_event/4</a></td><td><b>[GEN_FSM CALLBACK]</b> handle sync event on any state.</td></tr>
+<tr><td valign="top"><a href="#handle_yate_event-1">handle_yate_event/1</a></td><td> Handle an incoming yate subscribe event (watch, unwatch, install, uninstall)
+        during 'REGISTERING' state.</td></tr>
+<tr><td valign="top"><a href="#init-1">init/1</a></td><td> <b>[GEN_FSM CALLBACK]</b> Initiates the server.</td></tr>
+<tr><td valign="top"><a href="#resolve_custom_module-1">resolve_custom_module/1</a></td><td> Resolve subscribed yate_message routing.</td></tr>
+<tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td> Starts the server.</td></tr>
+<tr><td valign="top"><a href="#start_subscribe_sequence-0">start_subscribe_sequence/0</a></td><td> Start the configured subscribe sequence on the active connection.</td></tr>
+<tr><td valign="top"><a href="#terminate-3">terminate/3</a></td><td> <b>[GEN_FSM CALLBACK]</b> Handling terminate sequence.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="STARTED-2">'STARTED'/2</a></h3>
+<div class="spec">
+<p><tt>STARTED(X1, State) -&gt; any()</tt></p>
+</div><p><b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events</p>
+<p><b>See also:</b> <a href="#start_subscribe_sequence-0">start_subscribe_sequence/0</a>, <a href="#start_subscribe_sequence-1">start_subscribe_sequence/1</a>.</p>
+
+<h3 class="function"><a name="SUBSCRIBE-2">'SUBSCRIBE'/2</a></h3>
+<div class="spec">
+<p><tt>SUBSCRIBE(X1, State) -&gt; any()</tt></p>
+</div><p><b>[GEN_FSM CALLBACK]</b> handle 'SUBSCRIBE' state events</p>
+<p><b>See also:</b> <a href="#handle_yate_event-0">handle_yate_event/0</a>.</p>
+
+<h3 class="function"><a name="code_change-4">code_change/4</a></h3>
+<div class="spec">
+<p><tt>code_change(OldVsn, StateName, State, Extra) -&gt; {ok, NewState}</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed</p>
+
+<h3 class="function"><a name="handle_sync_event-4">handle_sync_event/4</a></h3>
+<div class="spec">
+<p><tt>handle_sync_event(X1, From, StateName, StateData) -&gt; any()</tt></p>
+</div><p><b>[GEN_FSM CALLBACK]</b> handle sync event on any state</p>
+<p><b>See also:</b> <a href="#resolve_custom_module-1">resolve_custom_module/1</a>.</p>
+
+<h3 class="function"><a name="handle_yate_event-1">handle_yate_event/1</a></h3>
+<div class="spec">
+<p><tt>handle_yate_event(YateEvent::<a href="#type-yate_event">yate_event()</a>) -&gt; ok</tt></p>
+</div><p> Handle an incoming yate subscribe event (watch, unwatch, install, uninstall)
+        during 'REGISTERING' state</p>
+
+<h3 class="function"><a name="init-1">init/1</a></h3>
+<div class="spec">
+<p><tt>init(X1::[]) -&gt; {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}</tt></p>
+</div><p> <b>[GEN_FSM CALLBACK]</b> Initiates the server</p>
+
+<h3 class="function"><a name="resolve_custom_module-1">resolve_custom_module/1</a></h3>
+<div class="spec">
+<p><tt>resolve_custom_module(YateEvent::<a href="#type-yate_event">yate_event()</a>) -&gt; ResolvedPath</tt>
+<ul class="definitions"><li><tt>ResolvedPath = InstallPath | InstallPriorityPath | WatchPath</tt></li>
+<li><tt>InstallPath = {MessageName::string(), install}</tt></li>
+<li><tt>InstallPriorityPath = {MessageName::string(), install, Priority::<a href="#type-int">int()</a>}</tt></li>
+<li><tt>WatchPath = {MessageName::string(), watch}</tt></li>
+</ul></p>
+</div><p> Resolve subscribed yate_message routing</p>
+
+<h3 class="function"><a name="start_link-0">start_link/0</a></h3>
+<div class="spec">
+<p><tt>start_link() -&gt; {ok, Pid} | ignore | {error, Error}</tt></p>
+</div><p> Starts the server</p>
+
+<h3 class="function"><a name="start_subscribe_sequence-0">start_subscribe_sequence/0</a></h3>
+<div class="spec">
+<p><tt>start_subscribe_sequence() -&gt; ok</tt></p>
+</div><p> Start the configured subscribe sequence on the active connection</p>
+
+<h3 class="function"><a name="terminate-3">terminate/3</a></h3>
+<div class="spec">
+<p><tt>terminate(Reason::_Reason, StateName::_StateName, State::_State) -&gt; ok</tt></p>
+</div><p> <b>[GEN_FSM CALLBACK]</b> Handling terminate sequence.
+  It should be the opposite of Module:init/1 and do any necessary
+  cleaning up. When it returns, the gen_server terminates with Reason.
+  The return value is ignored.
+ </p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Sep 22 2010, 16:10:12.</i></p>
+</body>
+</html>

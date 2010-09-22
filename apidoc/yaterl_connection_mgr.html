@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Module yaterl_connection_mgr</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css" title="EDoc">
+</head>
+<body bgcolor="white">
+<div class="navbar"><a name="#navbar_top"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<hr>
+
+<h1>Module yaterl_connection_mgr</h1>
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>'yaterl_connection_mgr' is a gen_srv erlang process that coordinate
+       application access to yate connections.
+<p>Copyright © 2009-2010 Alca Societa' Cooperativa</p>
+
+<p><b>Behaviours:</b> <a href="gen_server.html"><tt>gen_server</tt></a>.</p>
+<p><b>Authors:</b> Luca Greco (<a href="mailto:luca.greco@alcacoop.it"><tt>luca.greco@alcacoop.it</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2>'yaterl_connection_mgr' is a gen_srv erlang process that coordinate
+       application access to yate connections
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-state">state()</a></h3>
+<p><tt>state() = tuple()</tt></p>
+<p><pre>   #state{yate_connection}</pre></p>
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#code_change-3">code_change/3</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed.</td></tr>
+<tr><td valign="top"><a href="#get_yate_connection-0">get_yate_connection/0</a></td><td> get current yate connection.</td></tr>
+<tr><td valign="top"><a href="#handle_call-3">handle_call/3</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Handling call messages.</td></tr>
+<tr><td valign="top"><a href="#handle_cast-2">handle_cast/2</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Handling cast messages.</td></tr>
+<tr><td valign="top"><a href="#handle_info-2">handle_info/2</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Handling all non call/cast messages.</td></tr>
+<tr><td valign="top"><a href="#init-1">init/1</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Initiates the server.</td></tr>
+<tr><td valign="top"><a href="#is_connected-0">is_connected/0</a></td><td> check if there is a managed connection.</td></tr>
+<tr><td valign="top"><a href="#received_binary_data-1">received_binary_data/1</a></td><td> receive binary data from current active connection and return immediatelly.</td></tr>
+<tr><td valign="top"><a href="#send_binary_data-1">send_binary_data/1</a></td><td> send a yate event and return immediatelly.</td></tr>
+<tr><td valign="top"><a href="#set_yate_connection-2">set_yate_connection/2</a></td><td> set current yate connection.</td></tr>
+<tr><td valign="top"><a href="#start_link-0">start_link/0</a></td><td> Starts the server.</td></tr>
+<tr><td valign="top"><a href="#terminate-2">terminate/2</a></td><td> <b>[GEN_SERVER CALLBACK]</b> Handling terminate sequence.</td></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3 class="function"><a name="code_change-3">code_change/3</a></h3>
+<div class="spec">
+<p><tt>code_change(OldVsn, State, Extra) -&gt; {ok, NewState}</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed</p>
+
+<h3 class="function"><a name="get_yate_connection-0">get_yate_connection/0</a></h3>
+<div class="spec">
+<p><tt>get_yate_connection() -&gt; Result</tt>
+<ul class="definitions"><li><tt>Result = {NodeName, NodeModule}</tt></li>
+</ul></p>
+</div><p> get current yate connection</p>
+
+<h3 class="function"><a name="handle_call-3">handle_call/3</a></h3>
+<div class="spec">
+<p><tt>handle_call(X1, From, State) -&gt; any()</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Handling call messages</p>
+<p><b>See also:</b> <a href="#get_yate_connection-0">get_yate_connection/0</a>, <a href="#is_connected-0">is_connected/0</a>, <a href="#set_yate_connection-2">set_yate_connection/2</a>.</p>
+
+<h3 class="function"><a name="handle_cast-2">handle_cast/2</a></h3>
+<div class="spec">
+<p><tt>handle_cast(X1, State) -&gt; any()</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Handling cast messages</p>
+<p><b>See also:</b> <a href="#received_binary_data-1">received_binary_data/1</a>, <a href="#send_binary_data-1">send_binary_data/1</a>.</p>
+
+<h3 class="function"><a name="handle_info-2">handle_info/2</a></h3>
+<div class="spec">
+<p><tt>handle_info(Msg::Request, State) -&gt; Reply</tt>
+<ul class="definitions"><li><tt>Request = {nodedown, Node}</tt></li>
+<li><tt>Node = atom()</tt></li>
+<li><tt>Reply = {noreply, State}</tt></li>
+</ul></p>
+</div><p><p> <b>[GEN_SERVER CALLBACK]</b> Handling all non call/cast messages</p>
+ 
+  <b>nodedown</b>: monitored connection node down
+ </p>
+
+<h3 class="function"><a name="init-1">init/1</a></h3>
+<div class="spec">
+<p><tt>init(X1::[]) -&gt; {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Initiates the server</p>
+
+<h3 class="function"><a name="is_connected-0">is_connected/0</a></h3>
+<div class="spec">
+<p><tt>is_connected() -&gt; true | false</tt></p>
+</div><p> check if there is a managed connection</p>
+
+<h3 class="function"><a name="received_binary_data-1">received_binary_data/1</a></h3>
+<div class="spec">
+<p><tt>received_binary_data(Data::binary()) -&gt; ok</tt></p>
+</div><p> receive binary data from current active connection and return immediatelly</p>
+
+<h3 class="function"><a name="send_binary_data-1">send_binary_data/1</a></h3>
+<div class="spec">
+<p><tt>send_binary_data(Data::binary()) -&gt; ok</tt></p>
+</div><p> send a yate event and return immediatelly</p>
+
+<h3 class="function"><a name="set_yate_connection-2">set_yate_connection/2</a></h3>
+<div class="spec">
+<p><tt>set_yate_connection(X1::YateConnection_Position, YateConnection_ModuleName::string()) -&gt; ok</tt>
+<ul class="definitions"><li><tt>YateConnection_Position = local | {remote, YateConnection_NodeName::string()}</tt></li>
+</ul></p>
+</div><p> set current yate connection</p>
+
+<h3 class="function"><a name="start_link-0">start_link/0</a></h3>
+<div class="spec">
+<p><tt>start_link() -&gt; {ok, Pid} | ignore | {error, Error}</tt></p>
+</div><p> Starts the server</p>
+
+<h3 class="function"><a name="terminate-2">terminate/2</a></h3>
+<div class="spec">
+<p><tt>terminate(Reason::_Reason, State::_State) -&gt; ok</tt></p>
+</div><p> <b>[GEN_SERVER CALLBACK]</b> Handling terminate sequence.
+  It should be the opposite of Module:init/1 and do any necessary
+  cleaning up. When it returns, the gen_server terminates with Reason.
+  The return value is ignored.
+ </p>
+<hr>
+
+<div class="navbar"><a name="#navbar_bottom"></a><table width="100%" border="0" cellspacing="0" cellpadding="2" summary="navigation bar"><tr><td><a href="overview-summary.html" target="overviewFrame">Overview</a></td><td><a href="http://www.erlang.org/"><img src="erlang.png" align="right" border="0" alt="erlang logo"></a></td></tr></table></div>
+<p><i>Generated by EDoc, Sep 22 2010, 16:10:13.</i></p>
+</body>
+</html>

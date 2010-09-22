@@ -1,0 +1,6 @@
+{application,yaterl}.
+{packages,[]}.
+{modules,[yate_decode,yate_encode,yate_event,yate_message,yaterl_app,
+          yaterl_config,yaterl_connection_mgr,yaterl_gen_mod,
+          yaterl_incoming_event_srv,yaterl_logger,yaterl_stdio_connection,
+          yaterl_subscribe_mgr,yaterl_sup]}.
