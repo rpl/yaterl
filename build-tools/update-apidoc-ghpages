@@ -1,0 +1,26 @@
+CURRENT_SHA1=`git rev-parse HEAD`
+CURRENT_BRANCH=`git branch --no-color 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
+
+echo "UPDATING gh-pages apidocs from brach ${CURRENT_BRANCH} sha1 ${CURRENT_SHA1}"
+
+make -C apps/yaterl doc
+mkdir -p TMP_GHPAGES/apidoc
+git --work-tree TMP_GHPAGES checkout gh-pages
+
+LAST_SHA1=`cat TMP_GHPAGES/apidoc/.last_sha1 2> /dev/null`
+
+if [ "${CURRENT_SHA1}" != "${LAST_SHA1}" ]; then
+  echo "COPY AND COMMIT"
+  cp -rf apps/yaterl/doc/* TMP_GHPAGES/apidoc/
+  echo "${CURRENT_SHA1}" > TMP_GHPAGES/apidoc/.last_sha1
+  git --work-tree TMP_GHPAGES add .
+  git --work-tree TMP_GHPAGES commit -m "auto-updated apidoc (sha1: ${CURRENT_SHA1})"
+else
+  echo "NOTHING TO UPDATE"
+fi
+
+echo "RETURN TO ${CURRENT_BRANCH} branch"
+git --work-tree . checkout -f ${CURRENT_BRANCH}
+rm -rf TMP_GHPAGES
+
+echo "DONE"
