@@ -1,0 +1,13 @@
+{application, yaterl_devtool,
+ [
+  {description, "YatERL Developer Tool"},
+  {vsn, "0.0.1"},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  getopt,
+                  erlydtl         
+                 ]},
+  {mod, { yaterl_devtool, []}},
+  {env, []}
+ ]}.

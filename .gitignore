@@ -1,0 +1,11 @@
+*~
+*.beam
+*erl_crash.dump
+apps/*/doc
+apps/*/ebin
+apps/*/deps
+apps/*/coverage
+apps/*/logs
+apps/*/test/cover.spec
+examples/*/ebin
+apps/yaterl-devtool/bin/yaterl_devtool

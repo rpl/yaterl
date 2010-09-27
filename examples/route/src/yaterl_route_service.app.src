@@ -1,0 +1,11 @@
+{application, yaterl_route_service,
+ [
+  {description, "YATE Erlang binding"},
+  {vsn, "1"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.

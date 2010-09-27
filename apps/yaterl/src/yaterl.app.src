@@ -1,0 +1,11 @@
+{application, yaterl,
+ [
+  {description, "YATE Erlang binding"},
+  {vsn, "0.0.1"},
+  {applications, [
+                  kernel,
+                  stdlib         
+                 ]},
+  {mod, { yaterl_app, []}},
+  {env, []}
+ ]}.
