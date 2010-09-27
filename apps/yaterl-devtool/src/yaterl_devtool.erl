@@ -60,7 +60,7 @@ write_zip_to_file(ProjectName, ProjectType, MainModuleName, ZipBin) ->
     ScriptData = case ProjectType of
                      "global" -> ProjectNameBin = list_to_binary(ProjectName),
                                  <<"#!/usr/bin/env escript\n",
-                                   "%%!-sname ", ProjectNameBin/binary, 
+                                   "%%!-sname ", MainModuleNameBin/binary, 
                                    " -noinput -escript main ", MainModuleNameBin/binary, "\n",
                                    ZipBin/binary>>;
                      "channel" -> <<"#!/usr/bin/env escript\n",
