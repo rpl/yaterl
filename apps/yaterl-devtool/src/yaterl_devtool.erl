@@ -4,7 +4,7 @@
          help/0,
          main/1,
          generate/2,
-         pack/2,
+         pack/3,
          connect/1
         ]).
 
@@ -35,11 +35,11 @@ generate_files(ProjectName, ProjectType) ->
     ok = file:write_file(BaseFileName ++ ".app.src", AppSrc),
     ok = file:write_file(BaseFileName ++ ".erl", ModSrc).
 
-pack(ProjectName, ProjectType) ->
+pack(ProjectName, ProjectType, MainModuleName) ->
     Files = load_files_to_pack(),
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
-            write_zip_to_file(ProjectName, ProjectType, ZipBin);
+            write_zip_to_file(ProjectName, ProjectType, MainModuleName, ZipBin);
         {error, ZipError} ->
             io:format("ERROR: failed to pack yaterl_gen_mod project~n~p~n", [ZipError]),
             erlang:halt(2)
@@ -55,15 +55,16 @@ read_file_to_pack(Filename, Dir) ->
     {ok, Bin} = file:read_file(filename:join(Dir, Filename)),
     {Filename, Bin}.
 
-write_zip_to_file(ProjectName, ProjectType, ZipBin) ->
+write_zip_to_file(ProjectName, ProjectType, MainModuleName, ZipBin) ->
+    MainModuleNameBin = list_to_binary(MainModuleName),
     ScriptData = case ProjectType of
                      "global" -> ProjectNameBin = list_to_binary(ProjectName),
                                  <<"#!/usr/bin/env escript\n",
                                    "%%!-sname ", ProjectNameBin/binary, 
-                                   " -noinput\n",
+                                   " -noinput -escript main ", MainModuleNameBin/binary, "\n",
                                    ZipBin/binary>>;
                      "channel" -> <<"#!/usr/bin/env escript\n",
-                                    "%%!-noinput\n",
+                                    "%%!-noinput -escript main ", MainModuleNameBin/binary, "\n",
                                     ZipBin/binary>>
                  end,
     case file:write_file(ProjectName, ScriptData) of
@@ -76,8 +77,8 @@ write_zip_to_file(ProjectName, ProjectType, ZipBin) ->
             erlang:halt(3)
     end.
 
-connect(Options) ->
-    ok.
+connect(_Options) ->
+    unimplemented.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%
@@ -88,20 +89,22 @@ getopt_speclist() ->
     [
      {help,    $h, "help",    undefined, "Print this help"},
      {verbose, $v, "verbose", boolean,   "List all the actions executed"},
-     {generate_project_name, $g, "generate", string,  "Generate a new project skeleton"},
-     {project_type, $t, "type", string, "Project skeleton type"},
-     {pack_project_name, $p, "pack", string,  "Generate a new project skeleton"}
+     {project_type, $t, "type", string, "Project type (global, channel)"}
     ].
     
 getopt_help() ->
-    getopt:usage(getopt_speclist(), "yaterl-devtool").
+    getopt:usage(getopt_speclist(), "yaterl-devtool", "command parameters...",
+             [{"command",   "Commands to be executed (e.g. generate, pack)"},
+              {"parameters", "Command parameters"}]),
+    io:format("Command examples:~n"),
+    io:format("\tgenerate <ProjectName>~n"),
+    io:format("\tpack <ExecutableName> [<MainModuleName>]~n").
 
-getopt_parse_run(Args) ->
-    Result = getopt:parse(getopt_speclist(), Args),
-    Opts = case Result of
-        {ok, {ParsedOpts, RestArgs}} ->
-            io:format("PARSED: ~p~nREST: ~p~n", [ParsedOpts,RestArgs]),
-            ParsedOpts;
+getopt_parse_run(RawArgs) ->
+    Result = getopt:parse(getopt_speclist(), RawArgs),
+    {Opts, Args} = case Result of
+        {ok, Value} ->
+            Value;
         {error, {invalid_option, InvalidOption}} ->
             help(),
             io:format("ERROR: unknown option '~s'~n", [InvalidOption]),
@@ -110,21 +113,38 @@ getopt_parse_run(Args) ->
             io:format("ERROR: ~p~n", [Reason]),
             erlang:halt(1)
     end,
-    Help = proplists:lookup(help, Opts),
-    GenerateProjectName = proplists:lookup(generate_project_name, Opts),
-    PackProjectName = proplists:lookup(pack_project_name, Opts),
-    ProjectType = proplists:lookup(project_type, Opts),
-    execute(Help, GenerateProjectName, PackProjectName, ProjectType).
+    devtool_execute(Args, Opts).
 
-execute(none, none, none, none) ->
+devtool_execute([], _Opts) ->
     help();
-execute({help, true}, _, _, _) ->
+devtool_execute(["help"|_Rest], _Opts) ->
     help();
-execute(none, {generate_project_name, ProjectName}, none, none) ->
-    execute(none, {generate_project_name, ProjectName}, none, {project_type, "global"});
-execute(none, {generate_project_name, ProjectName}, none, {project_type, ProjectType}) ->
+devtool_execute(["generate", ProjectName], Opts) ->
+    ProjectType = case proplists:lookup(project_type, Opts) of
+                      none -> "global";
+                      Value -> Value
+                  end,
     generate(ProjectName, ProjectType);
-execute(none, none, {pack_project_name, ProjectName}, none) ->
-    execute(none, none, {pack_project_name, ProjectName}, {project_type, "global"});
-execute(none, none, {pack_project_name, ProjectName}, {project_type, ProjectType}) ->
-    pack(ProjectName, ProjectType).
+devtool_execute(["generate", _ProjectName | _ ], Opts) ->
+    help(),
+    io:format("ERROR: too many arguments.~n");
+devtool_execute(["pack", ProjectName], Opts) ->
+    ProjectType = case proplists:lookup(project_type, Opts) of
+                      none -> "global";
+                      Value -> Value
+                  end,
+    MainModuleName = ProjectName,
+    pack(ProjectName, ProjectType, MainModuleName);
+devtool_execute(["pack", ProjectName, MainModuleName], Opts) ->
+    ProjectType = case proplists:lookup(project_type, Opts) of
+                      none -> "global";
+                      Value -> Value
+                  end,
+    pack(ProjectName, ProjectType, MainModuleName);
+devtool_execute(["pack", _ProjectName, _MainModuleName | _ ], Opts) ->
+    help(),
+    io:format("ERROR: too many arguments.~n");
+devtool_execute(_, _) ->
+    help(),
+    io:format("ERROR: unknown command or invalid arguments.~n").
+
