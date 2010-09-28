@@ -1,0 +1,32 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="content-type" content="text/html;charset=UTF-8" />
+    <title>{{ page.title }}</title>
+    <link href="/res/css/screen.css" media="screen" rel="stylesheet" type="text/css" />
+  </head>
+  <body>
+    <div id="main">
+      <div id="header" class="basic" style="margin-bottom:20px">
+        <img id="forkme" src="res/img/forkme_right_red_aa0000.png" title="fork me"/>
+      </div>
+
+      <div id="content" class="site">
+
+        {{ content }}
+
+      </div>
+    </div>
+
+    <div id="footer">
+      <div class="company">
+        &copy;
+        {{ site.time | date: "%Y" }}
+        Alca Società Cooperativa.
+        All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,19 @@
+body {
+  padding-left: 210px;
+  padding-right: 15%;
+  background: url(/res/img/labs_alcacoop.png) no-repeat 0px 10px;
+}
+
+#forkme {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.site {
+  width: 90%;
+}
+
+#content.site {
+  text-align: left;
+}
