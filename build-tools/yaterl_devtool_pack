@@ -16,7 +16,7 @@ main(_) ->
             Script = <<"#!/usr/bin/env escript\n",
                        "%%!-sname yaterl_devtool -noinput -sasl\n", 
                        ZipBin/binary>>,
-	    filelib:ensure_dir("../../builds"),            
+            ok = filelib:ensure_dir("../../builds/"),            
             case file:write_file("../../builds/yaterl_devtool", Script) of
                 ok ->
                     io:format("SUCCESS: Wrote yaterl_devtool into ../../builds/yaterl_devtool\n"),
