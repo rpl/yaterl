@@ -8,17 +8,11 @@ help:
 	@echo "       ./make pack"  
 	@echo
 
-compile: 
+compile: FORCE
 	${REBAR} compile
-	make pack
+	../../builds/yaterl_devtool pack ../../builds/examples/route.escript yate_test_route
 
 clean:
 	${REBAR} clean
-
-doc: FORCE
-	${REBAR} doc
-
-pack: FORCE
-	../../apps/yaterl-devtool/bin/yaterl_devtool pack yate_test_route.escript yate_test_route
 
 FORCE:

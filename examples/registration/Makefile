@@ -5,20 +5,12 @@ help:
 	@echo "Usage: "
 	@echo "       ./make {compile|clean}"        
 	@echo
-	@echo "       ./make pack"  
-	@echo
 
-compile: 
+compile: FORCE
 	${REBAR} compile
-	make pack
+	../../builds/yaterl_devtool pack ../../builds/examples/registration.escript registration
 
 clean:
 	${REBAR} clean
-
-doc: FORCE
-	${REBAR} doc
-
-pack: FORCE
-	../../apps/yaterl-devtool/bin/yaterl_devtool pack registration.escript registration
 
 FORCE:
