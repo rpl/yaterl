@@ -38,12 +38,24 @@ and make as build tools:
 $ make
 make -C apps/yaterl compile
 ...
-build-tools/rebar install target=../../builds/
+Installing: yaterl-0.0.1 to ../../builds/
 ...
 make -C apps/yaterl-devtool compile
 ...
-cp apps/yaterl-devtool/bin/yaterl_devtool builds/
-
+SUCCESS: Wrote yaterl-devtool into ../../builds/yaterl-devtool
+...
+make -C examples/route compile
+...
+SUCCESS: packed script to '../../builds/examples/route.escript'
+...
+make -C examples/resolver compile
+...
+SUCCESS: packed script to '../../builds/examples/resolver.escript'
+...
+make -C examples/registration compile
+...
+SUCCESS: packed script to '../../builds/examples/registration.escript'
+...
 $
 </pre>
 
@@ -52,7 +64,7 @@ directory like this:
 
 <pre>
 $ ls builds
-yaterl-0.0.1  yaterl_devtool
+examples  yaterl-0.0.1  yaterl-devtool
 </pre>
 
 Now you can add yaterl-0.0.1 to your erlang libraries load paths and yaterl\_devtool
@@ -61,7 +73,7 @@ to your application path, as example:
 <pre>
 $ sudo cp -rf builds/yaterl-0.0.1 /usr/lib/erlang/lib/
 ...
-$ sudo cp builds/yaterl_devtool /usr/local/bin/
+$ sudo cp builds/yaterl-devtool /usr/local/bin/
 ...
 </pre>
 
@@ -71,7 +83,7 @@ Create a new project skeleton
 You can now create a new YATE module using yaterl\_devtool:
 
 <pre>
-$ yaterl_devtool generate my_first_yate_module
+$ yaterl-devtool generate my_first_yate_module
 </pre>
 
 **generate** yaterl\_devtool command will create a base *yaterl\_gen\_mod* project
@@ -102,7 +114,7 @@ We can now use **pack** yaterl\_devtool command to package the module into a con
 escript executable archive:
 
 <pre>
-$ ../builds/yaterl_devtool pack my_first_yate_module.escript my_first_yate_module
+$ ../builds/yaterl-devtool pack my_first_yate_module.escript my_first_yate_module
 SUCCESS: packed script to 'my_first_yate_module.escript'
 </pre>
 
