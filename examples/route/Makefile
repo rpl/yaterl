@@ -1,4 +1,5 @@
 REBAR=../../build-tools/rebar
+YATERL_DEVTOOL=../../builds/yaterl-devtool
 
 help:
 	@echo "YATErl building tool."
@@ -10,7 +11,7 @@ help:
 
 compile: FORCE
 	${REBAR} compile
-	../../builds/yaterl_devtool pack ../../builds/examples/route.escript yate_test_route
+	${YATERL_DEVTOOL} pack ../../builds/examples/route.escript yate_test_route
 
 clean:
 	${REBAR} clean

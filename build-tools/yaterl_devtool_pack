@@ -14,24 +14,25 @@ main(_) ->
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             Script = <<"#!/usr/bin/env escript\n",
-                       "%%!-sname yaterl_devtool -noinput -sasl\n", 
+                       "%%!-sname yaterl_devtool -noinput -sasl ",
+                       "-escript main yaterl_devtool\n", 
                        ZipBin/binary>>,
             ok = filelib:ensure_dir("../../builds/"),            
-            case file:write_file("../../builds/yaterl_devtool", Script) of
+            case file:write_file("../../builds/yaterl-devtool", Script) of
                 ok ->
-                    io:format("SUCCESS: Wrote yaterl_devtool into ../../builds/yaterl_devtool\n"),
+                    io:format("SUCCESS: Wrote yaterl-devtool into ../../builds/yaterl-devtool\n"),
                     ok;
                 {error, WriteError} ->
-                    io:format("ERROR: Failed to write yaterl_devtool script: ~p\n", [WriteError]),
+                    io:format("ERROR: Failed to write yaterl-devtool script: ~p\n", [WriteError]),
                     halt(1)
             end;
         {error, ZipError} ->
-            io:format("ERROR: Failed to construct yaterl_devtool script archive: ~p\n", [ZipError]),
+            io:format("ERROR: Failed to construct yaterl-devtool script archive: ~p\n", [ZipError]),
             halt(1)
     end,
 
     %% Finally, update executable perms for our script
-    [] = os:cmd("chmod a+x ../../builds/yaterl_devtool").
+    [] = os:cmd("chmod a+x ../../builds/yaterl-devtool").
 
 load_files(Wildcard, Dir) ->
     [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard, Dir)].

@@ -1,4 +1,5 @@
 REBAR=../../build-tools/rebar
+YATERL_DEVTOOL=../../builds/yaterl-devtool
 
 help:
 	@echo "YATErl building tool."
@@ -8,7 +9,7 @@ help:
 
 compile: FORCE
 	${REBAR} compile
-	../../builds/yaterl_devtool pack ../../builds/examples/registration.escript registration
+	${YATERL_DEVTOOL} pack ../../builds/examples/registration.escript registration
 
 clean:
 	${REBAR} clean
