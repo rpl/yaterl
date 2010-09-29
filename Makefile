@@ -4,7 +4,6 @@ default: yaterl yaterl-devtool yaterl-examples
 
 yaterl:
 	make -C apps/yaterl compile
-	${REBAR} install target=../../builds/
 
 yaterl-devtool:
 	make -C apps/yaterl-devtool compile

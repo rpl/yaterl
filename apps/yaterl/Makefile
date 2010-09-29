@@ -17,6 +17,7 @@ test: FORCE compile
 
 compile: 
 	${REBAR} compile
+	${REBAR} install target=../../builds/
 
 clean:
 	${REBAR} clean
