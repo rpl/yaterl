@@ -8,4 +8,4 @@ apps/*/coverage
 apps/*/logs
 apps/*/test/cover.spec
 examples/*/ebin
-apps/yaterl-devtool/bin/yaterl_devtool
+builds
