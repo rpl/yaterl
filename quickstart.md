@@ -206,4 +206,4 @@ log(YateMessage) ->
     yaterl_gen_mod:ack(YateMessage).
 </pre>
 
-More info on *yaterl\_gen\_mod* from [apidoc](/apidoc/yaterl_gen_mod.html)
+More info on *yaterl\_gen\_mod* from [apidoc](apidoc/yaterl_gen_mod.html)
