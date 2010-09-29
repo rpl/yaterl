@@ -28,6 +28,5 @@ doc: FORCE
 doc-img:
 	${PLANTUML} doc-src/plantuml/*.txt
 	${RESIZE_IMGS} doc/img/*.png 
-	
 
 FORCE:

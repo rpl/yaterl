@@ -1,26 +1,12 @@
-REBAR=./build-tools/rebar
+REBAR=build-tools/rebar
 
-help:
-	@echo "YATErl building tool."
-	@echo "Usage: "
-	@echo "       ./make {compile|clean}"        
-	@echo
-	@echo "       ./make test"  
-	@echo
-	@echo "       ./make doc"
-	@echo
-	@echo
+default: yaterl yaterl-devtool
 
-test: FORCE compile
-	${REBAR} ct
+yaterl:
+	make -C apps/yaterl compile
+	${REBAR} install target=../../builds/
 
-compile: 
-	${REBAR} compile
-
-clean:
-	${REBAR} clean
-
-doc: FORCE
-	${REBAR} doc
-
-FORCE:
+yaterl-devtool:
+	make -C apps/yaterl-devtool compile
+	mkdir -p builds
+	cp apps/yaterl-devtool/bin/yaterl_devtool builds/
