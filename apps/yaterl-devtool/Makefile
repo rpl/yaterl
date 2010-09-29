@@ -1,4 +1,5 @@
 REBAR=../../build-tools/rebar
+YATERL_DEVTOOL_PACK=../../build-tools/yaterl_devtool_pack
 
 help:
 	@echo "YATErl building tool."
@@ -15,6 +16,7 @@ test: FORCE compile
 	${REBAR} ct
 
 compile: 
+	${REBAR} get-deps
 	${REBAR} compile
 	make pack
 
@@ -25,6 +27,6 @@ doc: FORCE
 	${REBAR} doc
 
 pack: FORCE
-	./pack
+	${YATERL_DEVTOOL_PACK}
 
 FORCE:

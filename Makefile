@@ -8,5 +8,3 @@ yaterl:
 
 yaterl-devtool:
 	make -C apps/yaterl-devtool compile
-	mkdir -p builds
-	cp apps/yaterl-devtool/bin/yaterl_devtool builds/
