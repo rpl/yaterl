@@ -86,7 +86,7 @@ You can now create a new YATE module using yaterl\_devtool:
 $ yaterl-devtool generate my_first_yate_module
 </pre>
 
-**generate** yaterl\_devtool command will create a base *yaterl\_gen\_mod* project
+**generate** yaterl-devtool command will create a base *yaterl\_gen\_mod* project
 skeleton:
 
 <pre>
@@ -110,7 +110,7 @@ my_first_yate_module.app  my_first_yate_module.beam
 Pack and load it
 ----------------
 
-We can now use **pack** yaterl\_devtool command to package the module into a convenient
+We can now use **pack** yaterl-devtool command to package the module into a convenient
 escript executable archive:
 
 <pre>
