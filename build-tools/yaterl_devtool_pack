@@ -9,7 +9,8 @@ main(_) ->
     Files1 = load_files("*", "ebin"),
     Files2 = load_files("*", "deps/getopt/ebin"),
     Files3 = load_files("*", "deps/erlydtl/ebin"),
-    Files = Files1 ++ Files2 ++ Files3,
+    Files4 = load_files("rebar", "../../build-tools"),
+    Files = Files1 ++ Files2 ++ Files3 ++ Files4,
 
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->

@@ -9,7 +9,6 @@
         ]).
 
 main(Args) ->
-    io:format("INPUT: ~p~n", [Args]),
     getopt_parse_run(Args).
 
 help() ->
@@ -22,18 +21,29 @@ generate(ProjectName, ProjectType) ->
 generate_dirtree(ProjectName, _ProjectType) ->
     filelib:ensure_dir(ProjectName++"/ebin/"),
     filelib:ensure_dir(ProjectName++"/src/"),
-    filelib:ensure_dir(ProjectName++"/include/").
+    filelib:ensure_dir(ProjectName++"/include/"),
+    filelib:ensure_dir(ProjectName++"/build-tools/").
 
 generate_files(ProjectName, ProjectType) ->
     TplVars = [{project_name, ProjectName},
             {project_type, ProjectType}],
     {ok, AppSrc} = yaterl_gen_mod_appsrc_dtl:render(TplVars),
     {ok, ModSrc} = yaterl_gen_mod_dtl:render(TplVars),
+    {ok, MakefileSrc} = makefile_dtl:render(TplVars),
     BaseFileName = ProjectName++"/src/"++ProjectName,
-    io:format("SOURCE: ~p~n", [AppSrc]),
-    io:format("WRITING TO: ~s~n", [BaseFileName]),
+    io:format("Generating file: ~s.app.src~n", [BaseFileName]),
     ok = file:write_file(BaseFileName ++ ".app.src", AppSrc),
-    ok = file:write_file(BaseFileName ++ ".erl", ModSrc).
+    io:format("Generating file: ~s.erl~n", [BaseFileName]),
+    ok = file:write_file(BaseFileName ++ ".erl", ModSrc),
+    io:format("Generating file: Makefile~n"),
+    ok = file:write_file(ProjectName++"/Makefile", MakefileSrc),
+    io:format("Generating file: rebar~n"),
+    RebarData = extract_rebar_from_escript_archive(),
+    ok = file:write_file(ProjectName++"/build-tools/rebar", RebarData),
+    [] = os:cmd("chmod a+x "++ProjectName++"/build-tools/rebar"),
+    {ok, _BytesCopied} = file:copy(escript:script_name(), 
+                                   ProjectName++"/build-tools/yaterl-devtool"),
+    [] = os:cmd("chmod a+x "++ProjectName++"/build-tools/yaterl-devtool").
 
 pack(ProjectName, ProjectType, MainModuleName) ->
     Files = load_files_to_pack(),
@@ -148,3 +158,13 @@ devtool_execute(_, _) ->
     help(),
     io:format("ERROR: unknown command or invalid arguments.~n").
 
+extract_rebar_from_escript_archive() ->
+    Filename = escript:script_name(),
+    {ok, File} = file:open(Filename,[read,binary]),
+    {ok, _Line1} = file:read_line(File),
+    {ok, _Line2} = file:read_line(File),
+    {ok, Data} = file:read(File, 65535555),
+    {ok, ExtractedList} = zip:extract(Data,[memory, {file_list, ["rebar"]}]),
+    [{_Name, RebarData}|_] = ExtractedList,
+    RebarData.
+    

@@ -1,0 +1,20 @@
+REBAR=./build-tools/rebar
+YATERL_DEVTOOL=./build-tools/yaterl-devtool
+
+help:
+	@echo "YATErl building tool."
+	@echo "Usage: "
+	@echo "       ./make {compile|clean}"        
+	@echo
+	@echo "       ./make pack"  
+	@echo
+
+compile: FORCE
+	mkdir -p ./builds/
+	${REBAR} compile
+	${YATERL_DEVTOOL} pack ./builds/{{ project_name }}.escript {{ project_name }}
+
+clean:
+	${REBAR} clean
+
+FORCE:
