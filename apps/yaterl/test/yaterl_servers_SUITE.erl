@@ -41,11 +41,10 @@ all() -> [
           % should start subscribing sequence on new connection available
           %   and configured
           message_subscribing_errors,
-          message_subscribing_sequence_from_callback,
           message_subscribing_sequence_from_parameter,
           % should route subscribed message to gen_yate_mod callbacks
-          message_routing_with_unconfigure_subscribe_mgr,
-          message_routing_with_configure_subscribe_mgr,
+          message_routing_with_unconfigured_subscribe_mgr,
+          message_routing_with_configured_subscribe_mgr,
           % should survive error deciding messages
           yate_decoding_errors,
           % should acknowledge install subscribed messages on processing errors
@@ -65,15 +64,18 @@ configure_yaterl_gen_mod(_Config) ->
        yaterl_gen_mod_forwarder
      ),
 
-    yaterl_logger:start_link(),
-    yaterl_subscribe_mgr:start_link(),
+    start_yaterl_servers(),
 
     SubscribeConfigList = [{"call.execute", watch},
                            {"call.route", install, "80"},
                            {"engine.status", install}],
     
-    yaterl_subscribe_mgr:start_subscribe_sequence(),
-    fake_subscribe_config_reply(SubscribeConfigList),
+    wait_connection_available(ok),
+
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
+    assert_subscribe_sequence(SubscribeConfigList),
+
+    wait_subscribe_completed(ok),
 
     FakeIncomingYateMessage1 = yate_message:new("call.execute"),
     watch = yaterl_subscribe_mgr:resolve_custom_module(FakeIncomingYateMessage1),
@@ -107,10 +109,9 @@ message_subscribing_errors(_Config) ->
      ),
 
 
-    yaterl_config:log_level(error),
     start_yaterl_servers(),
-    fake_connection_available(start_subscribe_sequence),
-    fake_subscribe_config_reply(SubscribeConfigList),
+    wait_connection_available(ok),
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
 
     process_flag(trap_exit, true),
 
@@ -132,30 +133,6 @@ message_subscribing_errors(_Config) ->
 
     ok.
     
-message_subscribing_sequence_from_callback(_Config) ->
-    SubscribeConfigList = [{setlocal, "id", "yaterl/1"},
-                           {"call.execute", watch},
-                           {"call.route", install, "80"},
-                           {"engine.status", install, 
-                            {filters, [{module,"conference"}]}
-                           }],
-    
-    yaterl_gen_mod_forwarder:start_link(),
-    yaterl_gen_mod_forwarder:register(),
-
-    yaterl_config:yaterl_custom_module_name(
-       yaterl_gen_mod_forwarder
-     ),
-    
-    start_yaterl_servers(),
-
-    fake_connection_available(start_subscribe_sequence),
-    fake_subscribe_config_reply(SubscribeConfigList),
-
-    assert_subscribe_sequence(SubscribeConfigList),
-
-    ok.
-
 message_subscribing_sequence_from_parameter(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, "80"},
@@ -169,11 +146,12 @@ message_subscribing_sequence_from_parameter(_Config) ->
      ),
     
     start_yaterl_servers(),
-
-    fake_connection_available(do_nothing),
+    wait_connection_available(ok),
     yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
 
     assert_subscribe_sequence(SubscribeConfigList),
+
+    wait_subscribe_completed(ok),    
     ok.
 
 
@@ -182,7 +160,7 @@ message_subscribing_sequence_from_parameter(_Config) ->
 %%%         as configured                                             %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-message_routing_with_unconfigure_subscribe_mgr(_Config) ->
+message_routing_with_unconfigured_subscribe_mgr(_Config) ->
     yaterl_gen_mod_forwarder:start_link(),
     yaterl_gen_mod_forwarder:register(),
 
@@ -192,7 +170,7 @@ message_routing_with_unconfigure_subscribe_mgr(_Config) ->
 
     start_yaterl_servers(),    
 
-    fake_connection_available(do_nothing),
+    wait_connection_available(ok),
 
     yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.execute:11">>),
     assert_route_to_yaterl_gen_mod({install, "call.execute"}),
@@ -205,7 +183,7 @@ message_routing_with_unconfigure_subscribe_mgr(_Config) ->
 
     ok.
        
-message_routing_with_configure_subscribe_mgr(_Config) ->
+message_routing_with_configured_subscribe_mgr(_Config) ->
     SubscribeConfigList = [{"call.execute", watch},
                    {"call.route", install, "80"},
                    {"engine.status", install}],
@@ -219,10 +197,10 @@ message_routing_with_configure_subscribe_mgr(_Config) ->
 
     start_yaterl_servers(),    
 
-    fake_connection_available(start_subscribe_sequence),
-    fake_subscribe_config_reply(SubscribeConfigList),
-
+    wait_connection_available(ok),
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
     assert_subscribe_sequence(SubscribeConfigList),
+    wait_subscribe_completed(ok),
 
     yaterl_connection_forwarder:received_binary_data(<<"%%>message:10:11:call.execute:11">>),
     assert_route_to_yaterl_gen_mod({watch, "call.execute"}),
@@ -253,10 +231,10 @@ yate_decoding_errors(_Config) ->
 
     start_yaterl_servers(),        
 
-    fake_connection_available(start_subscribe_sequence),
-    fake_subscribe_config_reply(SubscribeConfigList),
-
+    wait_connection_available(ok),
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
     assert_subscribe_sequence(SubscribeConfigList),
+    wait_subscribe_completed(ok),
 
     yaterl_connection_forwarder:received_binary_data(<<"%%>messe:10:11:call.execute:11">>),
 
@@ -283,10 +261,10 @@ acknowledge_on_processing_errors(_Config) ->
 
     start_yaterl_servers(),            
 
-    fake_connection_available(start_subscribe_sequence),
-    fake_subscribe_config_reply(SubscribeConfigList),
-
+    wait_connection_available(ok),
+    yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList),
     assert_subscribe_sequence(SubscribeConfigList),
+    wait_subscribe_completed(ok),
 
     Msg1 = <<"%%>message:10:11:call.route:11">>,
     AckMsg1 = yate_message:reply(yate_decode:from_binary(Msg1)),
@@ -310,24 +288,24 @@ start_yaterl_servers() ->
     yaterl_connection_forwarder:register(),
     yaterl_connection_forwarder:connect_to(yaterl_connection_mgr).
  
-fake_connection_available(Reply) ->
-    receive {connection_available, From} ->
+wait_connection_available(Reply) ->
+    receive 
+        {connection_available, From} ->
             gen_server:reply(From, Reply);
-            Any ->
-            ct:pal("UNEXPECTED: ~p~n", [Any])
-            
+        Any ->
+            ct:pal("UNEXPECTED: ~p~n", [Any])            
     after 500 ->
             ct:fail(expected_connection_available_never_called)
     end.    
    
-fake_subscribe_config_reply(SubscribeConfigList) ->
-    receive {subscribe_config, From} ->
-            gen_server:reply(From, SubscribeConfigList);
-            Any ->
-            ct:pal("UNEXPECTED: ~p~n", [Any])
-            
+wait_subscribe_completed(Reply) ->
+    receive 
+        {subscribe_completed, From} ->
+            gen_server:reply(From, Reply);
+        Any ->
+            ct:pal("UNEXPECTED: ~p~n", [Any])            
     after 500 ->
-            ct:fail(expected_subscribe_config_never_called)
+            ct:fail(expected_subscribe_completed_never_called)
     end.
 
 fake_processing_error() ->

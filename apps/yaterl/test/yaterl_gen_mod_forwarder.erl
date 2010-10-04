@@ -11,7 +11,7 @@
 %% Internal export for gen_yate_mod
 -export([
          connection_available/0,
-         subscribe_config/0,
+         subscribe_completed/0,
          subscribe_error/2,
          handle_install_message/1,
          handle_watch_message/1
@@ -37,8 +37,8 @@ register() ->
 connection_available() ->
     gen_server:call(?MODULE, connection_available).
 
-subscribe_config() ->
-    gen_server:call(?MODULE, subscribe_config).
+subscribe_completed() ->
+    gen_server:call(?MODULE, subscribe_completed).
 
 subscribe_error(LastRequested, LastReceived) ->
     gen_server:call(?MODULE, {subscribe_error, LastRequested, LastReceived}).
@@ -61,9 +61,10 @@ handle_call(connection_available, From, State) ->
     Pid = State#state.registered_pid,
     Pid ! {connection_available, From},    
     {noreply, State, infinity};    
-handle_call(subscribe_config, From, State) ->
+handle_call(subscribe_completed, From, State) ->
+    ct:pal("SUBSCRIBE COMPLETED CALLED~n"),
     Pid = State#state.registered_pid,
-    Pid ! {subscribe_config, From},    
+    Pid ! {subscribe_completed, From},    
     {noreply, State, infinity};    
 handle_call({subscribe_error, LastRequested, LastReceived}, From, State) ->
     Pid = State#state.registered_pid,

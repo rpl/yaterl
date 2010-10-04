@@ -38,7 +38,7 @@
 %% API
 -export([
          start_link/0,
-         start_subscribe_sequence/0,
+         start_subscribe_sequence/1,
          handle_yate_event/1,
          resolve_custom_module/1
         ]).
@@ -61,11 +61,6 @@
 %% @spec: () -> {ok,Pid} | ignore | {error,Error}
 start_link() ->
     gen_fsm:start_link({local, ?SERVER}, ?MODULE, [], []).
-
-%% @doc: Start the configured subscribe sequence on the active connection
-%% @spec: () -> ok
-start_subscribe_sequence() ->
-    gen_fsm:send_event(?SERVER, start_subscribe_sequence).
 
 %% @doc: Start the configured subscribe sequence on the active connection
 %% @spec: (SubscribeConfigList) -> ok
@@ -98,24 +93,15 @@ init([]) ->
     {ok, 'STARTED', #state{}}.
 
 %% @doc <b>[GEN_FSM CALLBACK]</b> handle 'STARTED' state events
-%% @see start_subscribe_sequence/0
 %% @see start_subscribe_sequence/1
-'STARTED'(start_subscribe_sequence, State) ->
-    yaterl_logger:info_msg("start_subscribe_sequence/0 ~n"),
-    CustomModule = yaterl_config:yaterl_custom_module_name(),
-    ConfigList = CustomModule:subscribe_config(),
-    State2 = State#state{subscribe_config = ConfigList},
-    {NextState, NewStateData} = case start_request_queue(State2) of
-                                    {continue, StateData} -> {'SUBSCRIBE', StateData};
-                                    {finish, StateData} -> {'COMPLETED', StateData}
-                                end,
-    {next_state, NextState, NewStateData};
 'STARTED'({start_subscribe_sequence, SubscribeConfigList}, State) ->
     yaterl_logger:info_msg("start_subscribe_sequence/1 ~n"),
     State2 = State#state{subscribe_config = SubscribeConfigList},
     {NextState, NewStateData} = case start_request_queue(State2) of
                                     {continue, StateData} -> {'SUBSCRIBE', StateData};
-                                    {finish, StateData} -> {'COMPLETED', StateData}
+                                    {finish, StateData} -> 
+                                        subscribe_completed(),
+                                        {'COMPLETED', StateData}
                                 end,
     {next_state, NextState, NewStateData}.
 
@@ -124,7 +110,9 @@ init([]) ->
 'SUBSCRIBE'({handle_yate_event, YateEvent}, State) ->
     case run_request_queue(YateEvent, State) of 
         {continue, StateData} -> {next_state, 'SUBSCRIBE', StateData};
-        {finish, StateData} -> {next_state, 'COMPLETED', StateData};
+        {finish, StateData} -> 
+            subscribe_completed(),
+            {next_state, 'COMPLETED', StateData};
         {stop, Reason, StateData} -> {stop, Reason, StateData}
     end.
 
@@ -254,3 +242,8 @@ send_subscribe_request({MessageName, watch}) ->
 send_to_yate(YateEvent) ->
     yaterl_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
     yaterl_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).
+
+subscribe_completed() ->
+    ct:pal("SUBSCRIBE COMPLETED CALLING~n"),
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    CustomModule:subscribe_completed().

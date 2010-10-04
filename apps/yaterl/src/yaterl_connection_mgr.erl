@@ -190,14 +190,6 @@ process_incoming_data(Data) ->
 
 connection_available_handling() ->
     CustomModule = yaterl_config:yaterl_custom_module_name(),
-    Action = CustomModule:connection_available(),
-    case Action of
-        do_nothing ->
-            ok;
-        start_subscribe_sequence ->
-            start_yate_message_subscribe_sequence()
-    end.
+    Action = CustomModule:connection_available().
 
-start_yate_message_subscribe_sequence() ->
-    yaterl_subscribe_mgr:start_subscribe_sequence().
 
