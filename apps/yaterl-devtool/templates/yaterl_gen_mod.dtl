@@ -4,7 +4,6 @@
 
 -export([
          connection_available/0,
-         subscribe_config/0,
          subscribe_error/2,
          handle_install_message/1,
          handle_watch_message/1,
@@ -12,16 +11,17 @@
         ]).
 
 connection_available() ->
-    %% NOTE: start_subscribe_sequence | do_nothing
-    do_nothing.
-
-subscribe_config() ->
     %% NOTE:
     %% [{setlocal, "param", "value"},
     %%  {"first.message", watch},
     %%  {"second.message", install, 80},
     %%  {"third.message", install, 80, {filters, [{"param", "value"}]}}]
-    [].
+    ConfigList = [].
+    yaterl_gen_mod:start_subscribe_sequence(ConfigList),
+    ok.
+
+subscribe_completed() ->
+    error_logger:info_msg("SUBSCRIBE COMPLETED").
 
 subscribe_error(_LastResponse, _LastRequest) ->
     error_logger:error_msg("SUBSCRIBE ERROR... EXITING"),

@@ -3,7 +3,6 @@
 -export([
          behaviour_info/1,
 
-         start_subscribe_sequence/0,
          start_subscribe_sequence/1,
 
          dispatch/1,
@@ -23,21 +22,23 @@
 %%% Example 1:
 %%% ```
 %%% connection_available() ->
-%%%    do_nothing.
+%%%    # do something
+%%%    ok.
 %%% '''
 %%%
 %%% Example 2:
 %%% ```
 %%% connection_available() ->
-%%%    start_subscribe_sequence.
+%%%    ConfigList = [...],
+%%%    yaterl_gen_mod:start_subscribe_sequence(ConfigList),
+%%%    ok.
 %%% '''
 %%%
-%%% <b>subscribe_config</b>: return a subscribe config list.
+%%% <b>subscribe_config</b>: called on subscribe sequence completed.
 %%% Example:
 %%% ```
-%%% subscribe_config() ->
-%%%    [{"call.execute", install, 20},
-%%%     {"custom.message", watch}].
+%%% subscribe_completed() ->
+%%%    ok.
 %%% '''
 %%% <b>subscribe_error</b>: custom subscribe error handling.
 %%% Example:
@@ -69,7 +70,7 @@
 %%% '''
 behaviour_info(callbacks) ->
     [{connection_available, 0},
-     {subscribe_config, 0},
+     {subscribe_completed, 0},
      {subscribe_error, 2},
      {handle_watch_message, 1},
      {handle_install_message, 1}];
@@ -79,9 +80,6 @@ behaviour_info(_Other) ->
 %%====================================================================
 %% API
 %%====================================================================
-
-start_subscribe_sequence() ->
-    yaterl_subscribe_mgr:start_subscribe_sequence().
 
 start_subscribe_sequence(SubscribeConfigList) ->
     yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList).
