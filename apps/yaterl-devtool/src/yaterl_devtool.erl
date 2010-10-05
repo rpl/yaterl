@@ -4,9 +4,8 @@
          help/0,
          main/1,
          generate/2,
-         pack/3,
-         connect/1,
-         load_files_to_pack/0
+         pack/4,
+         connect/1
         ]).
 
 main(Args) ->
@@ -46,8 +45,16 @@ generate_files(ProjectName, ProjectType) ->
                                    ProjectName++"/build-tools/yaterl-devtool"),
     [] = os:cmd("chmod a+x "++ProjectName++"/build-tools/yaterl-devtool").
 
-pack(ProjectName, ProjectType, MainModuleName) ->
-    Files = load_files_to_pack(),
+pack(ProjectName, ProjectType, MainModuleName, Opts) ->
+    {pack_yaterl, PackYaterl} = case proplists:lookup(pack_yaterl, Opts) of
+                      none ->  {pack_yaterl, false};
+                      Value -> Value
+                    end,
+    {yaterl_lib_dir, YaterlLibDir} = case proplists:lookup(yaterl_lib_dir, Opts) of
+                                         none -> {yaterl_lib_dir, unknown};
+                                         Value2 -> Value2
+                                     end,
+    Files = load_files_to_pack(PackYaterl, YaterlLibDir),
     case zip:create("mem", Files, [memory]) of
         {ok, {"mem", ZipBin}} ->
             write_zip_to_file(ProjectName, ProjectType, MainModuleName, ZipBin);
@@ -56,13 +63,20 @@ pack(ProjectName, ProjectType, MainModuleName) ->
             erlang:halt(2)
     end.
 
-load_files_to_pack() ->
+load_files_to_pack(true, none) ->
     code:del_path(yaterl), %% FIX: remove yaterl-devtool from code paths
-    Files1 = load_files_to_pack("*", "ebin"),
-    Files2 = load_files_to_pack("*", code:lib_dir(yaterl) ++ "/ebin"),
-    Files1 ++ Files2.
+    Files1 = collect_files_to_pack("*", "ebin"),
+    Files2 = collect_files_to_pack("*", code:lib_dir(yaterl) ++ "/ebin"),
+    Files1 ++ Files2;
+load_files_to_pack(true, YaterlLibDir) when is_list(YaterlLibDir) ->
+    Files1 = collect_files_to_pack("*", "ebin"),
+    Files2 = collect_files_to_pack("*", YaterlLibDir ++ "/ebin"),
+    Files1 ++ Files2;
+load_files_to_pack(false, _) ->
+    Files1 = collect_files_to_pack("*", "ebin"),
+    Files1.
 
-load_files_to_pack(Wildcard, Dir) ->
+collect_files_to_pack(Wildcard, Dir) ->
     [read_file_to_pack(Filename, Dir) || Filename <- filelib:wildcard(Wildcard, Dir)].
 
 read_file_to_pack(Filename, Dir) ->
@@ -72,6 +86,7 @@ read_file_to_pack(Filename, Dir) ->
 write_zip_to_file(ProjectName, ProjectType, MainModuleName, ZipBin) ->
     MainModuleNameBin = list_to_binary(MainModuleName),
     ScriptData = case ProjectType of
+
                      "global" -> ProjectNameBin = list_to_binary(ProjectName),
                                  <<"#!/usr/bin/env escript\n",
                                    "%%!-sname ", MainModuleNameBin/binary, 
@@ -103,7 +118,9 @@ getopt_speclist() ->
     [
      {help,    $h, "help",    undefined, "Print this help"},
      {verbose, $v, "verbose", boolean,   "List all the actions executed"},
-     {project_type, $t, "type", string, "Project type (global, channel)"}
+     {project_type, $t, "type", string, "Project type (global, channel)"},
+     {yaterl_lib_dir, $y, "yaterl", string, "Path to the yaterl lib dir (e.g. ./builds/yaterl-0.0.1)"},
+     {pack_yaterl, undefined, "pack-yaterl", boolean, "Include yaterl into the packaged escript"}
     ].
     
 getopt_help() ->
@@ -148,26 +165,28 @@ devtool_execute(["pack", ProjectName], Opts) ->
                       Value -> Value
                   end,
     MainModuleName = ProjectName,
-    pack(ProjectName, ProjectType, MainModuleName);
+    pack(ProjectName, ProjectType, MainModuleName, Opts);
 devtool_execute(["pack", ProjectName, MainModuleName], Opts) ->
     ProjectType = case proplists:lookup(project_type, Opts) of
                       none -> "global";
                       Value -> Value
                   end,
-    pack(ProjectName, ProjectType, MainModuleName);
+    pack(ProjectName, ProjectType, MainModuleName, Opts);
 devtool_execute(["pack", _ProjectName, _MainModuleName | _ ], Opts) ->
     help(),
     io:format("ERROR: too many arguments.~n");
-devtool_execute(_, _) ->
+devtool_execute(_Args, _Opts) ->
     help(),
+    %%DEBUG: io:format("DEBUG: Args (~p) and Opts (~p). ~n", [_Args, _Opts]),
     io:format("ERROR: unknown command or invalid arguments.~n").
+
 
 extract_rebar_from_escript_archive() ->
     Filename = escript:script_name(),
     {ok, File} = file:open(Filename,[read,binary]),
     {ok, _Line1} = file:read_line(File),
     {ok, _Line2} = file:read_line(File),
-    {ok, Data} = file:read(File, 65535555),
+    {ok, Data} = file:read(File, 65535555), %%% TODO: this is awful :-P
     {ok, ExtractedList} = zip:extract(Data,[memory, {file_list, ["rebar"]}]),
     [{_Name, RebarData}|_] = ExtractedList,
     RebarData.
