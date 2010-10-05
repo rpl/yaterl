@@ -5,7 +5,8 @@
          main/1,
          generate/2,
          pack/3,
-         connect/1
+         connect/1,
+         load_files_to_pack/0
         ]).
 
 main(Args) ->
@@ -56,7 +57,10 @@ pack(ProjectName, ProjectType, MainModuleName) ->
     end.
 
 load_files_to_pack() ->
-    load_files_to_pack("*", "ebin").
+    code:del_path(yaterl), %% FIX: remove yaterl-devtool from code paths
+    Files1 = load_files_to_pack("*", "ebin"),
+    Files2 = load_files_to_pack("*", code:lib_dir(yaterl) ++ "/ebin"),
+    Files1 ++ Files2.
 
 load_files_to_pack(Wildcard, Dir) ->
     [read_file_to_pack(Filename, Dir) || Filename <- filelib:wildcard(Wildcard, Dir)].
