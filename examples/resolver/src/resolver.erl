@@ -6,7 +6,7 @@
 
 -export([
          connection_available/0,
-         subscribe_config/0,
+         subscribe_completed/0,
          subscribe_error/2,
          handle_install_message/1,
          main/1
@@ -15,12 +15,13 @@
 -include("resolver.hrl").
 
 connection_available() ->
-    start_subscribe_sequence.
+    ConfigList = [{setlocal, "restart", "true"},
+                  {"call.execute", install, "80"},
+                  {"chan.hangup", install, "120", {filters, [{"cause_sip", "408"}]}}],
+    yaterl_gen_mod:start_subscribe_sequence(ConfigList).
 
-subscribe_config() ->
-    [{setlocal, "restart", "true"},
-     {"call.execute", install, "80"},
-     {"chan.hangup", install, "120", {filters, [{"cause_sip", "408"}]}}].
+subscribe_completed() ->
+    error_logger:info_msg("SUBSCRIBING COMPLETED").
 
 subscribe_error(_LastResponse, _LastRequest) ->
     error_logger:error_msg("SUBSCRIBE ERROR... EXITING"),

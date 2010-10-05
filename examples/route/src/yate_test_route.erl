@@ -7,7 +7,7 @@
 -export([
          main/1,
          connection_available/0,
-         subscribe_config/0,
+         subscribe_completed/0,
          subscribe_error/2,
          handle_install_message/1
         ]).
@@ -27,17 +27,15 @@ main(_) ->
     timer:sleep(infinity).
 
 connection_available() ->
-    start_subscribe_sequence.
+    ConfigList = [{"call.route", install, 80}],
+    yaterl_gen_mod:start_subscribe_sequence(ConfigList).
 
-subscribe_config() ->
-    error_logger:error_msg("SUBSCRIBE CONFIG"),
-    [{"call.route", install, 80}].
-%     {"call.route", install, 80, {filters, [{"module", "conference"}]}}].
+subscribe_completed() ->
+    error_logger:info_msg("SUBSCRIBING COMPLETED").
 
 subscribe_error(_LastResponse, _LastRequest) ->
     error_logger:error_msg("SUBSCRIBE ERROR... EXITING"),
     init:stop(1).
-
 
 handle_install_message(YateMessage) ->
     case {yate_message:name(YateMessage),
