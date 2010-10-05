@@ -10,6 +10,8 @@ help:
 
 compile: FORCE
 	${REBAR} compile
+
+release:
 	${YATERL_DEVTOOL} ${PACK_YATERL} pack ../../builds/examples/registration.escript registration
 
 clean:

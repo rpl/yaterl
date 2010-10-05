@@ -9,7 +9,7 @@ main(_) ->
     Files1 = load_files("*", "ebin"),
     Files2 = load_files("*", "deps/getopt/ebin"),
     Files3 = load_files("*", "deps/erlydtl/ebin"),
-    Files4 = load_files("rebar", "../../build-tools"),
+    Files4 = load_files("rebar", "../build-tools"),
     Files = Files1 ++ Files2 ++ Files3 ++ Files4,
 
     case zip:create("mem", Files, [memory]) of
@@ -18,10 +18,10 @@ main(_) ->
                        "%%!-sname yaterl_devtool -noinput -sasl ",
                        "-escript main yaterl_devtool\n", 
                        ZipBin/binary>>,
-            ok = filelib:ensure_dir("../../builds/"),            
-            case file:write_file("../../builds/yaterl-devtool", Script) of
+            ok = filelib:ensure_dir("../builds/"),            
+            case file:write_file("../builds/yaterl-devtool", Script) of
                 ok ->
-                    io:format("SUCCESS: Wrote yaterl-devtool into ../../builds/yaterl-devtool\n"),
+                    io:format("SUCCESS: Wrote yaterl-devtool into ../builds/yaterl-devtool\n"),
                     ok;
                 {error, WriteError} ->
                     io:format("ERROR: Failed to write yaterl-devtool script: ~p\n", [WriteError]),
@@ -33,7 +33,7 @@ main(_) ->
     end,
 
     %% Finally, update executable perms for our script
-    [] = os:cmd("chmod a+x ../../builds/yaterl-devtool").
+    [] = os:cmd("chmod a+x ../builds/yaterl-devtool").
 
 load_files(Wildcard, Dir) ->
     [read_file(Filename, Dir) || Filename <- filelib:wildcard(Wildcard, Dir)].

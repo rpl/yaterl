@@ -10,6 +10,8 @@ help:
 
 compile: 
 	${REBAR} compile
+
+release:
 	${YATERL_DEVTOOL} ${PACK_YATERL} pack ../../builds/examples/resolver.escript resolver
 
 clean:

@@ -12,6 +12,8 @@ help:
 
 compile: FORCE
 	${REBAR} compile
+
+release:
 	${YATERL_DEVTOOL} ${PACK_YATERL} pack ../../builds/examples/route.escript yate_test_route
 
 clean:
