@@ -1,9 +1,6 @@
 REBAR=./build-tools/rebar
 YATERL_DEVTOOL=./build-tools/yaterl-devtool
-## OPTIONAL PACK YATERL INTO ESCRIPT EXECUTABLE ARCHIVE:
-##   PACK_YATERL=-y ../../builds/yaterl-0.0.1 --pack-yaterl 
-## 
-##
+PACK_YATERL=-y deps/yaterl --pack-yaterl 
 
 help:
 	@echo "YATErl building tool."
@@ -15,12 +12,9 @@ help:
 
 compile: FORCE
 	mkdir -p ./builds/
+	${REBAR} get-deps 
 	${REBAR} compile
-	${YATERL_DEVTOOL} pack ./builds/{{ project_name }}.escript {{ project_name }}
-
-## OPTIONAL PACK YATERL INTO ESCRIPT EXECUTABLE ARCHIVE:
-## 	${YATERL_DEVTOOL} ${PACK_YATERL} pack ./builds/{{ project_name }}.escript \
-##                                        {{ project_name }}
+	${YATERL_DEVTOOL} ${PACK_YATERL} pack ./builds/{{ project_name }}.escript {{ project_name }}
 
 clean:
 	${REBAR} clean
