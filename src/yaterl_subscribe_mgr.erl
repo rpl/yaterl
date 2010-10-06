@@ -244,6 +244,6 @@ send_to_yate(YateEvent) ->
     yaterl_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).
 
 subscribe_completed() ->
-    ct:pal("SUBSCRIBE COMPLETED CALLING~n"),
+    yaterl_logger:info_msg("SUBSCRIBE COMPLETED~n"),
     CustomModule = yaterl_config:yaterl_custom_module_name(),
     CustomModule:subscribe_completed().
