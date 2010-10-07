@@ -197,5 +197,5 @@ reply(Message, Processed) ->
 %% INTERNAL: change parameter's value  
 change_message_param(Key, NewValue, Message) ->
     NewAttrs = proplists:delete(Key, Message#yate_event.params),
-    Message#yate_event{params=[ {Key, NewValue} | NewAttrs ]}.    
+    Message#yate_event{params= NewAttrs ++ [{Key, NewValue}] }.    
     
