@@ -70,21 +70,21 @@ log_files(AppLogFile, SaslLogFile) when is_list(AppLogFile), is_list(SaslLogFile
 %% where
 %%   ConnectionMgr_Location = {NodeName::string(), HostName::string()}
 whereis_yaterl_connection_mgr() ->
-    {NodeName, HostName} = get_key(whereis_yaterl_connection_mgr, {self, localhost}),
-    RealNodeName = case {NodeName,
-                         is_list(NodeName)} of
-                       {self, false} -> [H | _T ] = string:tokens(
-                                                      atom_to_list(node()), "@"
-                                                     ),
-                                        H;
-                       {CustomNodeName, true} -> CustomNodeName
-                   end,
-    RealHostName = case {HostName,
-                         is_list(HostName)} of
-                       {localhost, false} -> net_adm:localhost();
-                       {CustomHostName, true} -> CustomHostName
-                   end,
-    {RealNodeName, RealHostName}.
+    {NodeName, HostName} = get_key(whereis_yaterl_connection_mgr, {self, localhost}).
+    %% RealNodeName = case {NodeName,
+    %%                      is_list(NodeName)} of
+    %%                    {self, false} -> [H | _T ] = string:tokens(
+    %%                                                   atom_to_list(node()), "@"
+    %%                                                  ),
+    %%                                     H;
+    %%                    {CustomNodeName, true} -> CustomNodeName
+    %%                end,
+    %% RealHostName = case {HostName,
+    %%                      is_list(HostName)} of
+    %%                    {localhost, false} -> net_adm:localhost();
+    %%                    {CustomHostName, true} -> CustomHostName
+    %%                end,
+    %% {RealNodeName, RealHostName}.
 
 %% @doc: Set the yaterl_connection_mgr location
 %% @spec: (Value) -> ok
