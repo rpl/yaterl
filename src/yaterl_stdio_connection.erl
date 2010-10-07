@@ -135,8 +135,8 @@ handle_info({_Port, {data, {Eol, Data}}}, State) when Eol==eol; Eol==noeol ->
     received_binary_data(Data),
     {noreply, State};
 handle_info({_Port, eof}, State) ->
-    io:fwrite(standard_error, "EXITING...~n", []),
-    {stop, "YATE closed stdio socket", State};
+    io:fwrite(standard_error, "EXITING... YATE closed stdio socket~n", []),
+    {stop, yate_stdio_closed, State};
 
 handle_info({nodedown, Node}, State) ->
     io:fwrite(standard_error, "ERROR: Yate Control Server node '~w' down.~n",
@@ -149,7 +149,8 @@ handle_info({nodedown, Node}, State) ->
 %% The return value is ignored.
 %% 
 %% @spec: (_Reason, _State) -> ok
-terminate(_Reason, _State) ->
+terminate(yate_stdio_closed, _State) ->
+    supervisor:terminate_child(yaterl_sup, yaterl_stdio_connection),
     ok.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
