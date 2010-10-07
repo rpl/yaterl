@@ -98,13 +98,13 @@ ack_yate_message_before_die(State) ->
     YateEvent = yate_decode:from_binary(State#state.data),
     
     {_HandlerModule, SubscribeType} = resolve_custom_module(YateEvent),
-
-    case SubscribeType of
-        install -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
+    Direction = yate_event:direction(YateEvent),
+    case {SubscribeType, Direction} of
+        {install, incoming} -> yaterl_logger:warning_msg("ACK MESSAGE BEFORE DIE: ~p~n", 
                                          [State#state.data]),
-                   Ack = yate_message:reply(YateEvent),
-                   Data = yate_encode:to_binary(Ack),
-                   yaterl_connection_mgr:send_binary_data(Data);
+                               Ack = yate_message:reply(YateEvent),
+                               Data = yate_encode:to_binary(Ack),
+                               yaterl_connection_mgr:send_binary_data(Data);
         _ -> ok
     end.
 
@@ -128,7 +128,9 @@ processing_by_type(error, YateEvent) ->
 processing_by_type(message, YateEvent) ->
     ResolvedRoute = resolve_custom_module(YateEvent),
     case ResolvedRoute of 
-        unknown -> ok; %%% TODO: LOG AND EXIT            
+        {ModuleName, unknown} -> 
+            route_to_custom_module(install, ModuleName, YateEvent);
+            %%% TODO: LOG       
         {ModuleName, SubscribeType} -> route_to_custom_module(SubscribeType,
                                                               ModuleName, 
                                                               YateEvent)
@@ -152,8 +154,11 @@ route_to_custom_module(watch, WatchModule, YateEvent) ->
     ok.
 
 route_to_install_module(YateEvent, InstallModule) ->
-    {yate_binary_reply, ReplyData} = InstallModule:handle_install_message(YateEvent),
-    yaterl_connection_mgr:send_binary_data(ReplyData).
+    InstallHandlerReply = InstallModule:handle_install_message(YateEvent),
+    case InstallHandlerReply of
+        {yate_binary_reply, ReplyData} -> yaterl_connection_mgr:send_binary_data(ReplyData);
+        AnyOther -> yaterl_logger:info_msg("IGNORED InstallHandlerReply: ~p~n", [AnyOther])
+    end.
 
 route_to_watch_module(YateEvent, WatchModule) ->
     WatchModule:handle_watch_message(YateEvent).
