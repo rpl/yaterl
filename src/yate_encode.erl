@@ -119,7 +119,7 @@ encode_attributes(message_answer, Attrs) ->
 encode_attributes(message_params, MsgParams) ->
     % map and join message params with a '=' character
     FlatMsgParams = lists:flatmap(fun({X,Y}) -> 
-					  [<<":">>,(encode_chunk(X,"=")),<<"=">>,(encode_chunk(Y, "="))]  
+					  [<<":">>,(encode_chunk(X,"=")),<<"=">>,(encode_chunk(Y, ":"))]  
 				  end, MsgParams),
     << <<B/binary>> || B <- FlatMsgParams >>;
 encode_attributes(name_attr, Attrs) ->
