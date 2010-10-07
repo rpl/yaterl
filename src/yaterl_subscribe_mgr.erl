@@ -145,10 +145,11 @@ custom_module_resolving(_YateEvent, undefined) ->
     install;
 custom_module_resolving(YateEvent, SubscribeConfig) ->
     case proplists:lookup(yate_message:name(YateEvent), SubscribeConfig) of
-                none -> unknown;
-                {_MessageName, install, _Priority} -> install;
-                {_MessageName, install} -> install;
-                {_MessageName, watch} -> watch
+        none -> unknown;
+        {_MessageName, install, _Priority} -> install;
+        {_MessageName, install, _Priority, _Filters} -> install;
+        {_MessageName, install} -> install;
+        {_MessageName, watch} -> watch
     end.
 
 start_request_queue(State) ->
