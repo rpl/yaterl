@@ -155,8 +155,8 @@ devtool_execute([], _Opts) ->
 devtool_execute(["help"|_Rest], _Opts) ->
     help();
 devtool_execute(["generate", ProjectName], Opts) ->
-    ProjectType = case proplists:lookup(project_type, Opts) of
-                      none -> "global";
+    {project_type, ProjectType} = case proplists:lookup(project_type, Opts) of
+                      none -> {project_type, "global"};
                       Value -> Value
                   end,
     generate(ProjectName, ProjectType);
@@ -164,15 +164,15 @@ devtool_execute(["generate", _ProjectName | _ ], Opts) ->
     help(),
     io:format("ERROR: too many arguments.~n");
 devtool_execute(["pack", ProjectName], Opts) ->
-    ProjectType = case proplists:lookup(project_type, Opts) of
-                      none -> "global";
+    {project_type, ProjectType} = case proplists:lookup(project_type, Opts) of
+                      none -> {project_type, "global"};
                       Value -> Value
                   end,
     MainModuleName = ProjectName,
     pack(ProjectName, ProjectType, MainModuleName, Opts);
 devtool_execute(["pack", ProjectName, MainModuleName], Opts) ->
-    ProjectType = case proplists:lookup(project_type, Opts) of
-                      none -> "global";
+    {project_type, ProjectType} = case proplists:lookup(project_type, Opts) of
+                      none -> {project_type, "global"};
                       Value -> Value
                   end,
     pack(ProjectName, ProjectType, MainModuleName, Opts);
