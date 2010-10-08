@@ -7,7 +7,8 @@
 
          dispatch/1,
          reply/1,
-         ack/1
+         ack/1,
+         shutdown/1
         ]).
 
 -include("yate.hrl").
@@ -82,16 +83,25 @@ behaviour_info(_Other) ->
 %%====================================================================
 
 start_subscribe_sequence(SubscribeConfigList) ->
+    yaterl_tracer:add_note("yaterl_gen_mod", "left", 
+                           io_lib:format("~p", [SubscribeConfigList])),
+    yaterl_tracer:add_message("yaterl_gen_mod","yaterl_subscribe_mgr",
+                              "start_subscribe_sequence"),
     yaterl_subscribe_mgr:start_subscribe_sequence(SubscribeConfigList).
 
 %%% @doc: immediately send a yate message
 dispatch(YateMessage) when is_record(YateMessage, yate_event) ->
+    yaterl_tracer:add_note("yaterl_gen_mod", "right", 
+                           io_lib:format("~p", [YateMessage])),
+    yaterl_tracer:add_message("yaterl_gen_mod","YATE","dispatch"),
     Data = yate_encode:to_binary(YateMessage),
     yaterl_connection_mgr:send_binary_data(Data).
 
 %%% @doc: create a binary encoded reply (handled yate message) to be 
 %%%       returned from an handle_install_message
 reply(YateMessage) when is_record(YateMessage, yate_event) ->
+    yaterl_tracer:add_note("yaterl_gen_mod", "right", 
+                           io_lib:format("REPLY\n ~p", [YateMessage])),
     Reply = yate_message:reply(YateMessage, true),
     _Data = yate_encode:to_binary(Reply),
     {yate_binary_reply, _Data}.
@@ -99,7 +109,15 @@ reply(YateMessage) when is_record(YateMessage, yate_event) ->
 %%% @doc: create a binary encoded ack (unhandled yate message) to be 
 %%%       returned from an handle_install_message
 ack(YateMessage) when is_record(YateMessage, yate_event) ->
+    yaterl_tracer:add_note("yaterl_gen_mod", "right", 
+                           io_lib:format("ACK\n ~p", [YateMessage])),
     Reply = yate_message:reply(YateMessage, false),
     _Data = yate_encode:to_binary(Reply),
     {yate_binary_reply, _Data}.
 
+shutdown(Value) ->
+    yaterl_tracer:add_note("YATE #00FF00", "left", 
+                           "EXITING APPLICATION ON SUBSCRIBE ERROR"),
+    timer:sleep(1000),
+    yaterl_tracer:stop_trace(),
+    init:stop(Value).

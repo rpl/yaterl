@@ -30,7 +30,10 @@
 %% API
 -export([
          start/1,
-         run/1
+         run/1,
+         connection_available/1,
+         subscribe_completed/1,
+         subscribe_error/3
         ]).
 
 %% gen_server callbacks
@@ -54,6 +57,15 @@ start(Data) ->
 run(Pid) ->
     gen_server:cast(Pid, run).
 
+subscribe_error(Pid, LastRequest, LastReceived) ->
+    gen_server:cast(Pid, {subscribe_error, LastRequest, LastReceived}).
+
+subscribe_completed(Pid) ->
+    gen_server:cast(Pid, subscribe_completed).
+
+connection_available(Pid) ->
+    gen_server:cast(Pid, connection_available).
+
 %%====================================================================
 %% gen_server callbacks
 %%====================================================================
@@ -70,6 +82,24 @@ handle_cast(run, State) ->
     Data = State#state.data,
     YateEvent = yate_decode:from_binary(Data),
     processing_yate_event(YateEvent),
+    {stop, normal, State};
+handle_cast(connection_available, State) ->
+    yaterl_tracer:add_message("YATE","yaterl_gen_mod","connection_available"),
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    CustomModule:connection_available(),
+    {stop, normal, State};
+handle_cast(subscribe_completed, State) ->
+    yaterl_tracer:add_message("YATE","yaterl_gen_mod","subscribe_completed"),
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    CustomModule:subscribe_completed(),
+    {stop, normal, State};
+handle_cast({subscribe_error, LastRequest, LastResponse}, State) ->
+    yaterl_logger:error_msg("SUBSCRIBE ERROR:~nlast_request=~p~nlast_received=~p~n",
+                            [LastRequest, LastResponse]),
+    yaterl_tracer:add_message("yaterl_subscribe_mgr","yaterl_gen_mod","subscribe_error"),
+    %%% TODO: add a note
+    CustomModule = yaterl_config:yaterl_custom_module_name(),
+    CustomModule:subscribe_error(LastRequest, LastResponse),
     {stop, normal, State}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling terminate sequence. 
@@ -81,8 +111,12 @@ handle_cast(run, State) ->
 terminate(Reason, State) ->
     case Reason of
         normal -> ok;
-        _ -> ack_yate_message_before_die(State), 
-             ok
+        _ ->
+            Text = io_lib:format("\nReason: ~p\nState: ~p\n", [Reason, State]),
+            yaterl_tracer:add_note("YATE #FF0000", "left", ["<b>terminate yaterl_incoming_event_srv ", Text, "</b>"]),
+            yaterl_tracer:add_message("YATE","YATE", "ack_before_die"),
+            ack_yate_message_before_die(State), 
+            ok
     end.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
@@ -142,21 +176,29 @@ resolve_custom_module(YateEvent) ->
     {ModuleName, SubscribeType}.
 
 route_to_yaterl_subscribe_mgr(YateEvent) ->
+    yaterl_tracer:add_note("YATE", "left", io_lib:format("~p", [YateEvent])),
+    yaterl_tracer:add_message("YATE","yaterl_subscribe_mgr","handle_yate_event"),
     yaterl_subscribe_mgr:handle_yate_event(YateEvent).
 
 route_to_custom_module(install, InstallModule, YateEvent) ->
     yaterl_logger:info_msg("call custom handler"),
+    yaterl_tracer:add_note("YATE", "left", io_lib:format("~p", [YateEvent])),
+    yaterl_tracer:add_message("YATE","yaterl_gen_mod","handle_install_message"),
     route_to_install_module(YateEvent, InstallModule),
     ok;
 route_to_custom_module(watch, WatchModule, YateEvent) ->
     yaterl_logger:info_msg("cast custom handler"),
+    yaterl_tracer:add_note("YATE", "left", io_lib:format("~p", [YateEvent])),
+    yaterl_tracer:add_message("YATE","yaterl_gen_mod","handle_watch_message"),
     route_to_watch_module(YateEvent, WatchModule),
     ok.
 
 route_to_install_module(YateEvent, InstallModule) ->
     InstallHandlerReply = InstallModule:handle_install_message(YateEvent),
     case InstallHandlerReply of
-        {yate_binary_reply, ReplyData} -> yaterl_connection_mgr:send_binary_data(ReplyData);
+        {yate_binary_reply, ReplyData} -> 
+            yaterl_tracer:add_message("yaterl_gen_mod","YATE","send"),
+            yaterl_connection_mgr:send_binary_data(ReplyData);
         AnyOther -> yaterl_logger:info_msg("IGNORED InstallHandlerReply: ~p~n", [AnyOther])
     end.
 

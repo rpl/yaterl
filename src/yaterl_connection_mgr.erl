@@ -103,6 +103,7 @@ received_binary_data(Data) ->
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Initiates the server
 %% @spec: ([]) -> {ok, State} | {ok, State, Timeout} | ignore | {stop, Reason}
 init([]) ->
+    yaterl_tracer:start_trace(),
     {ok, #state{}}.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Handling call messages
@@ -165,7 +166,10 @@ handle_info({nodedown, Node}, State) ->
 %% The return value is ignored.
 %% 
 %% @spec: (_Reason, _State) -> ok
-terminate(_Reason, _State) ->
+terminate(Reason, State) ->
+    Text = io_lib:format("\nReason: ~p\nState: ~p\n", [Reason, State]),
+    yaterl_tracer:add_note("YATE #FF0000", "left", ["<b>terminate yaterl_connection_mgr ", Text, "</b>"]),
+    yaterl_tracer:stop_trace(),
     ok.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
@@ -180,7 +184,7 @@ code_change(_OldVsn, State, _Extra) ->
 send_to_yate_connection({local, YateConnection_ModuleName}, Data) ->
     YateConnection_ModuleName:send_binary_data(Data);
 send_to_yate_connection({remote, YateConnection_NodeName,
-                                    YateConnection_ModuleName}, Data) ->
+                         YateConnection_ModuleName}, Data) ->
     rpc:cast(YateConnection_NodeName, YateConnection_ModuleName,
              send_binary_data, [Data]).
 
@@ -189,7 +193,8 @@ process_incoming_data(Data) ->
     yaterl_incoming_event_srv:run(Pid).
 
 connection_available_handling() ->
-    CustomModule = yaterl_config:yaterl_custom_module_name(),
-    Action = CustomModule:connection_available().
+    {ok, Pid} = yaterl_incoming_event_srv:start(undefined),
+    yaterl_incoming_event_srv:connection_available(Pid).
+
 
 

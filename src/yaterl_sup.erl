@@ -70,10 +70,11 @@ get_childs_spec(stdio_connection_only) ->
     YateStdioConnectionSpec = ?CHILD(yaterl_stdio_connection, worker),
     [YaterlLoggerSpec, YateStdioConnectionSpec];
 get_childs_spec(all_in_one) ->
+    YaterlTracerSpec = ?CHILD(yaterl_tracer, worker),
     YaterlLoggerSpec = ?CHILD(yaterl_logger, worker),
     YateConnectionMgrSpec = ?CHILD(yaterl_connection_mgr, worker),
     YateStdioConnectionSpec = ?CHILD(yaterl_stdio_connection, worker),
     YateSubscribeMgrSpec = ?CHILD(yaterl_subscribe_mgr, worker),
-    [YaterlLoggerSpec, YateSubscribeMgrSpec,
+    [YaterlTracerSpec, YaterlLoggerSpec, YateSubscribeMgrSpec,
      YateConnectionMgrSpec, YateStdioConnectionSpec]. 
 

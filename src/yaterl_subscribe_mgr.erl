@@ -129,7 +129,9 @@ handle_sync_event({resolve_custom_module, YateEvent}, _From, StateName, StateDat
 %% The return value is ignored.
 %% 
 %% @spec: (_Reason, _StateName, _State) -> ok
-terminate(_Reason, _StateName, _State) ->
+terminate(Reason, StateName, State) ->
+    Text = io_lib:format("\nReason: ~p\nStateName: ~p\nState: ~p\n", [Reason, StateName, State]),
+    yaterl_tracer:add_note("YATE #FF0000", "left", ["<b>terminate yaterl_subscribe_mgr ", Text, "</b>"]),
     ok.
 
 %% @doc: <b>[GEN_SERVER CALLBACK]</b> Convert process state when code is changed
@@ -158,6 +160,14 @@ start_request_queue(State) ->
     SubscribeState = State#state{subscribe_queue=Queue},
     run_request_queue(undefined, SubscribeState).
 
+notify_subscribe_completed() ->
+    {ok, Pid} = yaterl_incoming_event_srv:start(undefined),
+    yaterl_incoming_event_srv:subscribe_completed(Pid).
+
+notify_subscribe_error(LastRequest, LastResponse) ->
+    {ok, Pid} = yaterl_incoming_event_srv:start(undefined),
+    yaterl_incoming_event_srv:subscribe_error(Pid, LastRequest, LastResponse).
+
 run_request_queue(YateEvent, State) ->
     CheckResult = (catch check_subscribe_reply(YateEvent, State#state.last_request)),
     {Out, NewQueue} = queue:out(State#state.subscribe_queue),
@@ -172,10 +182,9 @@ run_request_queue(YateEvent, State) ->
             send_subscribe_request(V),
             {continue, NewState3};
         {{'EXIT', Reason}, _NextRequest} ->
-            yaterl_logger:error_msg("SUBSCRIBE ERROR:~nlast_request=~p~nlast_received=~p~n",
-                                    [State#state.last_request, YateEvent]),
-            CustomModule = yaterl_config:yaterl_custom_module_name(),
-            CustomModule:subscribe_error(State#state.last_request, YateEvent),
+            LastRequest = State#state.last_request,
+            LastResponse = YateEvent,           
+            notify_subscribe_error(LastRequest, LastResponse),
             {stop, Reason, NewState}
     end.
 
@@ -242,9 +251,12 @@ send_subscribe_request({MessageName, watch}) ->
 
 send_to_yate(YateEvent) ->
     yaterl_logger:info_msg("SEND TO YATE: ~p~n", [YateEvent]),
+    yaterl_tracer:add_note("yaterl_subscribe_mgr", "right", 
+                           io_lib:format("~p", [YateEvent])),
+    yaterl_tracer:add_message("yaterl_subscribe_mgr","YATE",
+                              "subscribe_request"),
     yaterl_connection_mgr:send_binary_data(yate_encode:to_binary(YateEvent)).
 
 subscribe_completed() ->
     yaterl_logger:info_msg("SUBSCRIBE COMPLETED~n"),
-    CustomModule = yaterl_config:yaterl_custom_module_name(),
-    CustomModule:subscribe_completed().
+    notify_subscribe_completed().

@@ -150,6 +150,8 @@ handle_info({nodedown, Node}, State) ->
 %% 
 %% @spec: (_Reason, _State) -> ok
 terminate(yate_stdio_closed, _State) ->
+    yaterl_tracer:add_note("YATE #FF0000", "left", "<b>terminate yate_stdio_connection\nyate_stdio_closed</b>"),
+    yaterl_tracer:stop_trace(),
     supervisor:terminate_child(yaterl_sup, yaterl_stdio_connection),
     ok.
 

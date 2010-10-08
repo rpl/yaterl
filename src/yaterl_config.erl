@@ -29,6 +29,10 @@
 
          log_files/2,
 
+         tracing_enabled/0,
+         tracing_config/0,
+         tracing_config/3,
+
          whereis_yaterl_connection_mgr/0,
          whereis_yaterl_connection_mgr/1,
 
@@ -65,12 +69,21 @@ log_files(AppLogFile, SaslLogFile) when is_list(AppLogFile), is_list(SaslLogFile
                       ]),
     ok.
 
+tracing_enabled() ->
+    {undefined, undefined, undefined} =/= tracing_config().
+
+tracing_config() ->
+    get_key(tracing, {undefined, undefined, undefined}).
+
+tracing_config(Name,Title,Filename) ->
+    set_key(tracing, {Name, Title, Filename}).
+
 %% @doc: Get the yaterl_connection_mgr location
 %% @spec: () -> ConnectionMgr_Location
 %% where
 %%   ConnectionMgr_Location = {NodeName::string(), HostName::string()}
 whereis_yaterl_connection_mgr() ->
-    {NodeName, HostName} = get_key(whereis_yaterl_connection_mgr, {self, localhost}).
+    {_NodeName, _HostName} = get_key(whereis_yaterl_connection_mgr, {self, localhost}).
     %% RealNodeName = case {NodeName,
     %%                      is_list(NodeName)} of
     %%                    {self, false} -> [H | _T ] = string:tokens(
